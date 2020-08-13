@@ -13,6 +13,7 @@ class Export():
         period_start = '-'.join(period_start.split('/'))
         period_end = '-'.join(period_end.split('/'))
         self.filename = f'{job_selection}_{period_start}_{period_end}'
+        if search_term: self.filename += f'_({self.search_term})'
         self.total_hours = total_hours
         self.shifts = shifts
         self.compile()
