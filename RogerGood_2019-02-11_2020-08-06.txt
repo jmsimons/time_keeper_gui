@@ -1,0 +1,40 @@
+Shift Report for Period: 2019/02/11 - 2020/08/06
+
+Job: RogerGood		Search Term: email security
+
+Period Hours: 3.39	Period Shifts: 5
+
+
+* Shifts *
+
+RogerGood		2020/07/30 15:35:27		1.04		Notes:
+	Email Security: Checking contents of phishing email, seems to be
+	plain text without any other artifacts, phishing-link=https://cady-
+	oil.com/goodrealtymanagement.  Recommendation is to look through
+	settings and ensure that no email or other data is being forwarded
+	anywhere unexpected, ensure that home network is secure, scan for
+	malware on computers used for email access(malwarebytes), enable TLS
+	in all current access methods (what kind of email clients are being
+	used for access?)
+
+RogerGood		2020/07/31 13:09:09		0.66		Notes:
+	Email Security: looked up cady-oil.com/goodrealtymanagement on
+	checkphish.ai and brightcloud.com, neither had any information on
+	past malicious activity.  The web address returns an 'account
+	suspended' redirect which doesn't seem totally legitimate.
+
+RogerGood		2020/07/31 15:55:58		0.31		Notes:
+	Email Security
+
+RogerGood		2020/08/01 13:01:58		1.12		Notes:
+	Email Security: email domain?  - NETORG5121973.onmicrosoft.com.
+	Maybe set up 'IP Allow list' in mail settings.  Phone meeting (Monday
+	@ 2:30) talk to godaddy support.         POP3, IMAP, MAPI access
+	settings and security  Lunch on Friday.
+
+RogerGood		2020/08/04 09:58:28		0.26		Notes:
+	Email Security: Questions for GoDaddy support: 1. Does godaddy have a
+	protocol for this type of thing?  2. Can we get a list of POP3 or
+	IMAP server requests?
+
+* End of Report *

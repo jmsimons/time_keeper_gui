@@ -1,0 +1,40 @@
+Shift Report for Period: 2020/08/02 - 2020/08/09
+
+Job: RogerGood		Search Term: None
+
+Period Hours: 2.91	Period Shifts: 6
+
+
+* Shifts *
+
+RogerGood		2020/08/04 09:58:28		0.26		Notes:
+	Email Security: Questions for GoDaddy support: 1. Does godaddy have a
+	protocol for this type of thing?  2. Can we get a list of POP3 or
+	IMAP server requests?
+
+RogerGood		2020/08/07 08:56:29		1.38		Notes:
+	Email Security: Spoke with Rachel at GoDaddy support, addressed email
+	rules and added firewall.  Looked at email connection report,
+	requires further help from support.
+
+RogerGood		2020/08/07 10:23:05		0.58		Notes:
+	Laptop Purhcase: HP Envy 17-cg0019nr is out of stock, but the specs
+	look like plenty for internet, images, and video.  The cg000 will
+	definitely perform well for the next 7 years and would handle video
+	editing/rendering and other processor and memory intensive tasks.
+
+RogerGood		2020/08/07 12:05:01		0.25		Notes:
+	Email Security: Internet crime defined as any use of the internet
+	(including email) to carry out a frodulent scheme or illegal
+	activity.
+
+RogerGood		2020/08/08 16:52:36		0.12		Notes:
+	Laptop Purchase: RAZR would probably be overkill.
+
+RogerGood		2020/08/08 17:22:12		0.32		Notes:
+	Email Security: Cyber crime *complaint information: Victim ame,
+	address, phone, and email, Financial institution(s) info, incident
+	description, copy of individual emails (have copy locally), incident
+	type (email intrusion, spoofed email)
+
+* End of Report *

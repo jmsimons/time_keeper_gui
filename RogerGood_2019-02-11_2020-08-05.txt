@@ -1,0 +1,90 @@
+Shift Report for Period: 2019/02/11 - 2020/08/05
+
+Job: RogerGood		Search Term: None
+
+Period Hours: 8.95	Period Shifts: 16
+
+
+* Shifts *
+
+RogerGood		2020/07/22 14:08:59		0.04		Notes:
+	Makita die grinder 1/4" to 1/8" collett adapter.
+
+RogerGood		2020/07/22 14:50:21		0.36		Notes:
+	Makita Customer Service: 1-800-462-5482
+
+RogerGood		2020/07/23 12:38:41		0.54		Notes:
+	Received response email from makita cust service confirming that the
+	763672-9 1/8" collet fits the XDG02Z die grinder.  Forwarding to
+	Roger.
+
+RogerGood		2020/07/24 14:11:22		0.23		Notes:
+	Goodorganics: Looking into sedo domain sales.
+
+RogerGood		2020/07/24 14:31:56		0.17		Notes:
+	Makita Die Grinder: Preparing invoice.
+
+RogerGood		2020/07/24 15:37:57		0.77		Notes:
+	Goodorganics: Option1 - Put up landing page with intent to sell and
+	contact information (goodorganics_domain@gmail.com), and begin
+	collecting traffic statistics with Google Analytics (5hrs). Place
+	some images and relavent content with links to market search and
+	similar (4-5hrs). Plan to implement add-banner space.
+
+RogerGood		2020/07/25 13:15:00		0.96		Notes:
+	Goodorganics: Option2 - Place domain up for auction or sale @
+	https://sedo.com/us/sell-domains/domain-auction/ ... a) Apply to
+	'GreatDomains' premium auction, assumedly higher auction price... b)
+	Direct auction, set reserve price, cost $59 + 15% commission... c)
+	Domain appraisal, $99, complete in 5 business days... d) Broker
+	service, 15% commission upon sale.
+
+RogerGood		2020/07/28 11:24:09		0.91		Notes:
+	Goodorganics: Compiling findings.
+
+RogerGood		2020/07/28 14:08:41		0.53		Notes:
+	Goodorganics
+
+RogerGood		2020/07/28 15:02:33		0.53		Notes:
+	Goodorganics: Discussing options with Roger.  Moving forward with
+	domain parking.  Sending email to SEDO support with the following
+	question: is the seller made aware of auction bidder identity and bid
+	amount?
+
+RogerGood		2020/07/30 13:34:19		0.52		Notes:
+	Goodorganics: Recieved response from SEDO customer support.  It's
+	okay to park a domain while in a direct auction.  Sellers' and
+	bidders'/buyers' usernames are never revealed, bid amounts are
+	revealed with 'bidder1: $amount', 'bidder2: $amount'.
+
+RogerGood		2020/07/30 15:35:27		1.04		Notes:
+	Email Security: Checking contents of phishing email, seems to be
+	plain text without any other artifacts, phishing-link=https://cady-
+	oil.com/goodrealtymanagement.  Recommendation is to look through
+	settings and ensure that no email or other data is being forwarded
+	anywhere unexpected, ensure that home network is secure, scan for
+	malware on computers used for email access(malwarebytes), enable TLS
+	in all current access methods (what kind of email clients are being
+	used for access?)
+
+RogerGood		2020/07/31 13:09:09		0.66		Notes:
+	Email Security: looked up cady-oil.com/goodrealtymanagement on
+	checkphish.ai and brightcloud.com, neither had any information on
+	past malicious activity.  The web address returns an 'account
+	suspended' redirect which doesn't seem totally legitimate.
+
+RogerGood		2020/07/31 15:55:58		0.31		Notes:
+	Email Security
+
+RogerGood		2020/08/01 13:01:58		1.12		Notes:
+	Email Security: email domain?  - NETORG5121973.onmicrosoft.com.
+	Maybe set up 'IP Allow list' in mail settings.  Phone meeting (Monday
+	@ 2:30) talk to godaddy support.         POP3, IMAP, MAPI access
+	settings and security  Lunch on Friday.
+
+RogerGood		2020/08/04 09:58:28		0.26		Notes:
+	Email Security: Questions for GoDaddy support: 1. Does godaddy have a
+	protocol for this type of thing?  2. Can we get a list of POP3 or
+	IMAP server requests?
+
+* End of Report *
