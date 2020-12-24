@@ -1,9 +1,9 @@
 
-
 from tkinter import ttk, Tk, Text, StringVar, END, N, S, E, W, NORMAL, DISABLED
 from tkinter.scrolledtext import *
-import time
+import time, clipboard
 from timekeeper.Export import Export
+from timekeeper.Popups import PopConfirm
 
 class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application window gui elements, data, and methods ###
     
@@ -17,7 +17,6 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.container = ttk.Frame(self.root)
         self.frame = ttk.Frame(self.container)
         
-
         filter_label = ttk.Label(self.frame, text = 'Filter Shifts:')
         self.job_selection = StringVar(self.root)
         self.start_selection = StringVar(self.root)
@@ -126,7 +125,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
             if len(shift['notes']) < 20:
                 notes = shift['notes']
             else:
-                notes = shift['notes'][:20]
+                notes = shift['notes'][:20].split('\n')[0]
             values = (shift['job'], shift['str_start'], shift['hours'], notes)
             tid = self.table_view.insert('', 'end', values = values)
             self.tid_lookup[tid] = shift
@@ -224,8 +223,10 @@ class ViewEditShift():
         self.break_label = ttk.Label(self.frame)
         self.hours_label = ttk.Label(self.frame)
         self.notes = ScrolledText(self.frame, width = 60, height = 15, relief = 'sunken')
+        self.edit_frame = ttk.Frame(self.frame)
         edit_options = ('Job', 'Start', 'End', 'Break', 'Notes')
-        self.edit_menu = ttk.OptionMenu(self.frame, self.edit_selection, 'Edit', *edit_options)
+        self.edit_menu = ttk.OptionMenu(self.edit_frame, self.edit_selection, 'Edit', *edit_options)
+        self.delete_button = ttk.Button(self.edit_frame, text = 'Delete Shift', command = self.delete_prompt)
         self.done_button = ttk.Button(self.frame, text = 'Done', command = self.root.destroy)
         self.load_view()
 
@@ -235,11 +236,14 @@ class ViewEditShift():
         self.break_label.grid(column = 2, row = 2, sticky = W, ipadx = 5, ipady = 0)
         self.hours_label.grid(column = 2, row = 3, sticky = W, ipadx = 5, ipady = 0)
         self.notes.grid(column = 1, columnspan = 2, row = 4, sticky = (N, S, E, W), pady = 5)
-        self.edit_menu.grid(column = 1, row = 5, sticky = W)
+        self.edit_menu.grid(column = 1, row = 1, sticky = W)
+        self.delete_button.grid(column = 2, row = 1, sticky = E)
+        self.edit_frame.grid(column = 1, row = 5, sticky = W)
         self.done_button.grid(column = 2, row = 5, sticky = E)
         self.frame.grid(column = 0, row = 0, padx = 5, pady = 5)
         self.container.grid()
 
+        self.root.bind("<Command-c>", self.copy_notes)
         self.edit_menu.bind("<ButtonRelease-1>", self.edit_shift)
 
     def load_view(self):
@@ -248,10 +252,10 @@ class ViewEditShift():
         self.end_label['text'] = f"End:\t{self.shift['str_end']}"
         self.break_label['text'] = f"Break:\t{self.shift['break']} (minutes)"
         self.hours_label['text'] = f"Hours:\t{self.shift['hours']}"
-        # self.notes.config(state = NORMAL)
+        self.notes.config(state = NORMAL)
         self.notes.delete('1.0', END)
         self.notes.insert(END, self.shift['notes'])
-        # self.notes.config(state = DISABLED)
+        self.notes.config(state = DISABLED)
 
     def edit_shift(self, event):
         key = self.edit_selection.get().lower()
@@ -263,8 +267,21 @@ class ViewEditShift():
         entry.root.mainloop()
     
     def save_property(self, key, value):
-        self.shift = self.report_edit.db.update_shift(self.shift['id'], key, value)
+        self.shift = self.report_edit.db.update_shift_field(self.shift['id'], key, value)
         self.load_view()
+        self.report_edit.filter_data()
+    
+    def copy_notes(self, event = None):
+        clipboard.copy(self.notes.get(1.0, END))
+        print('Notes Copied')
+    
+    def delete_prompt(self):
+        popup = PopConfirm("Permanently delete shift?", self.delete_shift)
+        popup.root.mainloop()
+    
+    def delete_shift(self):
+        self.report_edit.db.remove_shift(self.shift['id'])
+        self.root.destroy()
         self.report_edit.filter_data()
 
 

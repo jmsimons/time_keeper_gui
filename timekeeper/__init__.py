@@ -1,7 +1,7 @@
 
 import os
 from timekeeper.Main import MainApp
-from timekeeper.Database import DB
+from timekeeper.Database import DB, Job, Shift
 
 db_filename = 'time.db'
 db = DB(db_filename)
