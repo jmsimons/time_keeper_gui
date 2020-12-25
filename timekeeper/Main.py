@@ -81,6 +81,7 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
 
     def __init__(self, db, job_name):
         self.db = db
+        self.events = {}
 
         self.job_name = job_name
         self.start_time = time.time()
@@ -127,11 +128,11 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
             elapsed_minutes = time.strftime('%M', elapsed_time)
             elapsed_seconds = time.strftime('%S', elapsed_time)
             self.elapsed_time_label['text'] = f'Elapsed Time: {elapsed_hours}:{elapsed_minutes}:{elapsed_seconds}'
-        x = self.root.after(200, self.time_counter)
+        self.events['time_counter'] = self.root.after(200, self.time_counter)
     
     def auto_save(self):
         self.save_update()
-        self.root.after(5000, self.auto_save)
+        self.events['auto_save'] = self.root.after(5000, self.auto_save)
 
     def toggle_break(self):
         if not self.break_start:
@@ -146,10 +147,12 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
     
     def save_update(self):
         if self.break_start:
-            self.break_time += time.time() - self.break_start
+            break_time = self.break_time + (time.time() - self.break_start)
+        else:
+            break_time = self.break_time
         end_time = time.time()
         notes = self.notes.get(1.0, END)
-        self.db.update_shift(self.id, end_time, self.break_time, notes)
+        self.db.update_shift(self.id, end_time, break_time, notes)
 
     def end_prompt(self):
         popup = PopConfirm("Save and exit shift?", self.end_shift)
@@ -162,8 +165,14 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
     def end_shift(self):
         self.save_update()
         self.db.complete_shift(self.id)
-        self.root.destroy()
+        self.close()
     
     def cancel_shift(self):
         self.db.remove_shift(self.id)
+        self.close()
+    
+    def close(self):
+        for val in self.events.values():
+            # print("Canceling command:", val)
+            self.root.after_cancel(val)
         self.root.destroy()

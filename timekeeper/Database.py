@@ -47,7 +47,7 @@ class Shift(Base): # Shift table definition #
         return f'Shift(ID: {self.id}, Job: {self.job_name}, Start: {self.start_time}, End: {self.end_time}, Break: {self.break_time})'
     
     def update(self, column, value):
-        print('Updating ID:', self.id, ' Col:', column, ' Val:', value)
+        # print('Updating ID:', self.id, ' Col:', column, ' Val:', value)
         format = '%Y/%m/%d %H:%M:%S'
         if column == 'job':
             self.job_name = value
@@ -60,6 +60,8 @@ class Shift(Base): # Shift table definition #
             except: return False
             self.end_time = value
         elif column == 'break':
+            if value == '':
+                value = 0
             self.break_time = float(value) * 60
         elif column == 'notes':
             self.notes = str(value)
@@ -117,7 +119,7 @@ class DB: ### Wrapper class for database functionality ###
     
     def add_shift(self, job_name, start_time, end_time, break_time, notes):
         shift = Shift(job_name, start_time, end_time, break_time, notes)
-        print(shift)
+        # print(shift)
         s = self.Session()
         s.add(shift)
         s.commit()
@@ -135,7 +137,7 @@ class DB: ### Wrapper class for database functionality ###
         return len(incomplete)
 
     def report_shifts(self, job_name = None, period_start = None, period_end = None, search_term = None):
-        print('Filtering by job:', job_name, 'per_start:', period_start, 'per_end:', period_end, 'search_term:', search_term)
+        # print('Filtering by job:', job_name, 'per_start:', period_start, 'per_end:', period_end, 'search_term:', search_term)
         s = self.Session()
         query = s.query(Shift).filter(Shift.complete == True)
         if job_name:
@@ -165,7 +167,7 @@ class DB: ### Wrapper class for database functionality ###
     
     def update_shift(self, id, end_time, break_time, notes):
         s = self.Session()
-        print("Autosaving shift...")
+        # print("Autosaving shift...")
         shift = s.query(Shift).filter_by(id = id).first()
         shift.end_time = end_time
         shift.break_time = break_time
@@ -175,7 +177,7 @@ class DB: ### Wrapper class for database functionality ###
 
     def complete_shift(self, id):
         s = self.Session()
-        print("Completing shift...")
+        # print("Completing shift...")
         shift = s.query(Shift).filter_by(id = id).first()
         shift.complete = True
         s.commit()
@@ -183,7 +185,7 @@ class DB: ### Wrapper class for database functionality ###
     
     def update_shift_field(self, id, column, value):
         s = self.Session()
-        print('Searching for', id)
+        # print('Searching for', id)
         shift = s.query(Shift).filter_by(id = id).first()
         shift.update(column, value)
         shift_dict = shift.get_dict()
@@ -196,7 +198,7 @@ class DB: ### Wrapper class for database functionality ###
 
     def remove_shift(self, id):
         s = self.Session()
-        print("Removing shift...")
+        # print("Removing shift...")
         shift = s.query(Shift).filter_by(id = id).first()
         s.delete(shift)
         s.commit()

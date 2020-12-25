@@ -11,17 +11,18 @@ class PopConfirm:
         self.root.grab_set()
 
         self.container = ttk.Frame(self.root)
-        self.frame = ttk.Frame(self.container)
+        self.frame = ttk.Frame(self.container)# , width = 200, height = 100
 
         label = ttk.Label(self.frame, text = message)
         canel_button = ttk.Button(self.frame, text = "Cancel", command = self.root.destroy)
         confirm_button = ttk.Button(self.frame, text = "Confirm", command = self.confirm_close)
         confirm_button.focus_set()
 
-        label.grid(column = 1, columnspan = 3, row = 1, rowspan = 2, padx = 5, pady = (10, 5))
-        canel_button.grid(column = 2, row = 3, sticky = E)
-        confirm_button.grid(column = 3, row = 3, sticky = E)
+        label.grid(column = 1, columnspan = 3, row = 1, rowspan = 2, padx = 5, pady = 10, sticky = W)
+        canel_button.grid(column = 2, row = 3, sticky = (S, E))
+        confirm_button.grid(column = 3, row = 3, sticky = (S, E))
 
+        # self.frame.grid_propagate(0)
         self.frame.grid(column = 0, row = 0, padx = 5, pady = 5)
         self.container.grid()
     
