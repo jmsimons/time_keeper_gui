@@ -1,9 +1,9 @@
 
 from tkinter import ttk, Tk, Text, StringVar, END, N, S, E, W, NORMAL, DISABLED
-from tkinter.scrolledtext import *
+from tkinter.scrolledtext import ScrolledText
 import time, clipboard
 from timekeeper.Export import Export
-from timekeeper.Popups import PopConfirm
+from timekeeper.Popups import PopConfirm, EntryBox
 
 class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application window gui elements, data, and methods ###
     
@@ -82,12 +82,15 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
     
     def build_date_select(self):
         format = '%Y/%m/%d'
+        # TODO: Replace 17 hour offset with time zone setting from config
         start = int(self.shifts[0]['start'] / 86400) * 86400 - (17 * 3600)
-        end = int(self.shifts[-1]['end'] / 86400) * 86400 - (17 * 3600) + (24 * 3600) + 1
+        # TODO: Change 'end' to today 
+        # end = int(self.shifts[-1]['end'] / 86400) * 86400 - (17 * 3600) + (24 * 3600) + 1
+        end = int(time.time() / 86400 + 1) * 86400 - (17 * 3600) + (24 * 3600) + 1
         self.seconds_range = [i for i in range(start, end, 86400)][::-1]
         self.date_range = [time.strftime(format, time.localtime(i)) for i in self.seconds_range]
         self.per_start_menu = ttk.OptionMenu(self.frame, self.start_selection, self.date_range[0], *self.date_range)
-        self.per_end_menu = ttk.OptionMenu(self.frame, self.end_selection, *self.date_range)
+        self.per_end_menu = ttk.OptionMenu(self.frame, self.end_selection, self.date_range[0], *self.date_range)
         self.start_selection.set(self.date_range[-1])
         self.end_selection.set(self.date_range[0])
 
@@ -283,85 +286,3 @@ class ViewEditShift():
         self.report_edit.db.remove_shift(self.shift['id'])
         self.root.destroy()
         self.report_edit.filter_data()
-
-
-class EntryBox():
-
-    def __init__(self, SaveFunc, key, current):
-        self.save_func = SaveFunc
-        self.key = key
-        self.current = current
-        self.get_args = None
-
-        self.root = Tk()
-        self.root.title(f'Edit {key.capitalize()}')
-        self.root.resizable(False, False)
-
-        self.container = ttk.Frame(self.root)
-        self.frame = ttk.Frame(self.container)
-
-        if key == 'job': self.job_entry()
-        elif 'start' in key or 'end' in key:
-            self.time_entry()
-        elif key == 'break': self.break_entry()
-        elif key == 'notes': self.notes_entry()
-
-        label_text = 'Current: '
-        if key != 'notes': label_text += str(self.current)
-        self.label = ttk.Label(self.frame, text = label_text)
-
-        self.button_frame = ttk.Frame(self.frame)
-        self.cancel_button = ttk.Button(self.button_frame, text = 'Cancel', command = self.root.destroy)
-        self.save_button = ttk.Button(self.button_frame, text = 'Save', command = self.save_property)
-
-        self.label.grid(column = 1, columnspan = 2, row = 1, sticky = W, pady = 0)
-        self.entry.grid(column = 1, columnspan = 2, row = 2, sticky = W, pady = 5, ipadx = 7)
-        self.button_frame.grid(column = 2, row = 3, sticky = E)
-        self.cancel_button.grid(column = 1, row = 1, sticky = W)
-        self.save_button.grid(column = 2, row = 1, sticky = E)
-        self.frame.grid(column = 0, row = 0, padx = 5, pady = 5)
-        self.container.pack()
-    
-    def int_mask(self, event):
-        chars = self.entry.get()
-        try:
-            int(chars)
-        except:
-            self.entry.delete(len(chars) - 1, END)
-
-    def time_mask(self, event):
-        last = self.entry.get()
-        try: int(last)
-        except: self.entry.delete(len(last) - 1, END)
-        if len(self.entry.get()) == 2:
-            self.entry.insert(END,":")
-        elif len(self.entry.get()) == 5:
-            self.entry.insert(END,":")
-        elif len(self.entry.get()) >= 9:
-            self.entry.delete(8, END)
-    
-    def save_property(self):
-        if self.get_args:
-            value = self.entry.get(*self.get_args)
-        else:
-            value = self.entry.get()
-        # TODO: some code that confirms the entry, maybe a popup notice with yes/no buttons
-        self.save_func(self.key, value)
-        self.root.destroy()
-    
-    def job_entry(self):
-        self.entry = ttk.Entry(self.frame)
-    
-    def time_entry(self):
-        self.entry = ttk.Entry(self.frame)
-        self.entry.insert(END, self.current)
-    
-    def break_entry(self):
-        self.entry = ttk.Entry(self.frame)
-        self.entry.config(width = 4)
-        self.entry.bind('<KeyRelease>', self.int_mask)
-
-    def notes_entry(self):
-        self.entry = ScrolledText(self.frame, width = 60, height = 15, relief = 'sunken')
-        self.entry.insert(END, self.current)
-        self.get_args = (1.0, END)
