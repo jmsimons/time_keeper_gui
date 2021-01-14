@@ -105,6 +105,8 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         self.save_button = ttk.Button(self.button_frame, text = 'Stop and Save', command = self.end_prompt)
         self.cancel_button = ttk.Button(self.frame, text = 'Cancel', command = self.cancel_prompt)
         self.notes = ScrolledText(self.frame, width = 60, height = 15, relief = 'sunken')
+        # TODO: Add 'Prior Shifts' button that links to 'self.launch_report_edit'
+        self.report_job_button = ttk.Button(self.frame, text = 'Prior Shifts', command = self.launch_report_edit)
 
         self.job_label.grid(column = 1, columnspan = 2, row = 1, sticky = W, pady = 5)
         self.elapsed_time_label.grid(column = 3, row = 1, sticky = E)
@@ -112,7 +114,8 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         self.pause_button.grid(column = 1, row = 1, sticky = W)
         self.save_button.grid(column = 2, row = 1, sticky = W)
         self.cancel_button.grid(column = 3, row = 2, sticky = E)
-        self.notes.grid(column = 1, columnspan = 3, row = 3, pady = (5, 0))
+        self.notes.grid(column = 1, columnspan = 3, row = 3, pady = (5, 5))
+        self.report_job_button.grid(column = 1, row = 4, sticky = W)
         self.frame.grid(column = 0, row = 0, padx = 5, pady = 5)
         self.container.grid(column = 0, row = 0)
 
@@ -170,6 +173,10 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
     def cancel_shift(self):
         self.db.remove_shift(self.id)
         self.close()
+    
+    def launch_report_edit(self):
+        self.report_edit_window = ReportEditApp(self.db, job_name = self.job_name)
+        self.report_edit_window.root.mainloop()
     
     def close(self):
         for val in self.events.values():

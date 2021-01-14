@@ -7,7 +7,7 @@ from timekeeper.Popups import PopConfirm, EntryBox
 
 class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application window gui elements, data, and methods ###
     
-    def __init__(self, db):
+    def __init__(self, db, **kwargs):
         self.db = db
 
         self.root = Tk()
@@ -23,7 +23,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.end_selection = StringVar(self.root)
         self.export_selection = StringVar(self.root)
         self.build_menu()
-        self.get_data()
+        self.get_data(**kwargs)
         self.build_date_select()
         self.search_input = ttk.Entry(self.frame, width = 16)#, placeholder = 'Search Notes...'
         self.filter_button = ttk.Button(self.frame, text = 'Filter', command = self.filter_data)
@@ -84,8 +84,6 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         format = '%Y/%m/%d'
         # TODO: Replace 17 hour offset with time zone setting from config
         start = int(self.shifts[0]['start'] / 86400) * 86400 - (17 * 3600)
-        # TODO: Change 'end' to today 
-        # end = int(self.shifts[-1]['end'] / 86400) * 86400 - (17 * 3600) + (24 * 3600) + 1
         end = int(time.time() / 86400 + 1) * 86400 - (17 * 3600) + (24 * 3600) + 1
         self.seconds_range = [i for i in range(start, end, 86400)][::-1]
         self.date_range = [time.strftime(format, time.localtime(i)) for i in self.seconds_range]
@@ -124,7 +122,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
     
     def populate_table(self):
         self.totals_label['text'] = f'Hours: {self.total_hours}\tShifts: {self.total_shifts}'
-        for shift in self.shifts:
+        for shift in self.shifts[::-1]:
             if len(shift['notes']) < 20:
                 notes = shift['notes']
             else:
