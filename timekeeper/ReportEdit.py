@@ -1,9 +1,11 @@
 
-from tkinter import ttk, Tk, Text, StringVar, END, N, S, E, W, NORMAL, DISABLED
+from tkinter import ttk, Tk, StringVar, END, N, S, E, W, NORMAL, DISABLED
 from tkinter.scrolledtext import ScrolledText
 import time, clipboard
+from timekeeper.grid_table import GridTable
 from timekeeper.Export import Export
 from timekeeper.Popups import PopConfirm, EntryBox
+
 
 class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application window gui elements, data, and methods ###
     
@@ -33,16 +35,23 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.table_view = ttk.Treeview(self.table_frame, selectmode = 'browse')
         vbar = ttk.Scrollbar(self.table_frame, orient = 'vertical', command = self.table_view.yview)
         self.table_view.config(yscrollcommand = vbar.set)
-        self.table_view['columns'] = ('1', '2', '3', '4')
+        self.table_view['columns'] = ('1', '2', '3', '4', '5')
         self.table_view['show'] = 'headings'
-        self.table_view.column('1', width = 100, anchor = 'w')
-        self.table_view.column('2', width = 150, anchor = 'w')
-        self.table_view.column('3', width = 50, anchor = 'w')
-        self.table_view.column('4', width = 150, anchor = 'w')
+        self.table_view.column('1', width = 120, anchor = 'w')
+        self.table_view.column('2', width = 80, anchor = 'w')
+        self.table_view.column('3', width = 75, anchor = 'w')
+        self.table_view.column('4', width = 45, anchor = 'w')
+        self.table_view.column('5', width = 150, anchor = 'w')
         self.table_view.heading('1', text = 'Job')
-        self.table_view.heading('2', text = 'Start')
-        self.table_view.heading('3', text = 'Hours')
-        self.table_view.heading('4', text = 'Notes')
+        self.table_view.heading('2', text = 'Date')
+        self.table_view.heading('3', text = 'Start')
+        self.table_view.heading('4', text = 'Hours')
+        self.table_view.heading('5', text = 'Notes')
+        # self.table_view = GridTable(self.table_frame, num_cols = 5)
+        # self.table_view.add_heading('Job', column = 1)
+        # self.table_view.add_heading('Start', column = 2, columnspan = 2)
+        # self.table_view.add_heading('Hours', column = 4)
+        # self.table_view.add_heading('Notes', column = 5)
         self.tid_lookup = {}
         self.populate_table()
 
@@ -53,10 +62,9 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
 
         filter_label.grid(column = 1, row = 1, sticky = W, pady = 5)
         self.search_input.grid(column = 4, row = 2, sticky = (W, E))
-        # self.filter_button.grid(column = 4, row = 3, sticky = E)
         self.totals_label.grid(column = 1, columnspan = 4, row = 4, sticky = W, pady = 5)
         self.table_frame.grid(column = 1, columnspan = 4, row = 5)
-        self.table_view.grid(column = 1, row = 1)
+        self.table_view.grid(column = 1, row = 1, sticky = (N, S, E, W))
         vbar.grid(column = 2, row = 1, sticky = (N, S))
         self.export_menu.grid(column = 1, row = 6, sticky = W)
         self.edit_jobs_button.grid(column = 3, row = 6, sticky = E)
@@ -64,6 +72,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
 
         self.frame.grid(column = 0, row = 0, padx = 5, sticky = (N, S, E, W))
         self.container.grid(column = 0, row = 0, sticky = (N, S, E, W))
+        print("Grid config complete")
 
         self.job_menu.bind("<ButtonRelease-1>", self.filter_data)
         self.per_start_menu.bind("<ButtonRelease-1>", self.filter_data)
@@ -72,6 +81,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.search_input.bind("<Return>", self.filter_data)
         self.table_view.bind("<Double-Button-1>", self.view_shift)
         self.export_menu.bind("<ButtonRelease-1>", self.export)
+        print("Init complete")
 
     def build_menu(self):
         self.choices = ['All Jobs'] + self.db.get_jobs()
@@ -113,6 +123,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         for tid in self.tid_lookup:
             self.table_view.delete(tid)
         self.tid_lookup = {}
+        # self.table_view.clear_rows()
 
     def get_data(self, job_name = None, period_start = None, period_end = None, search_term = None):
         self.shifts = self.db.report_shifts(job_name = job_name, period_start = period_start, period_end = period_end, search_term = search_term)
@@ -127,7 +138,8 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
                 notes = shift['notes']
             else:
                 notes = shift['notes'][:20].split('\n')[0]
-            values = (shift['job'], shift['str_start'], shift['hours'], notes)
+            start = shift['str_start'].split()
+            values = (shift['job'], start[0], start[1], shift['hours'], notes)
             tid = self.table_view.insert('', 'end', values = values)
             self.tid_lookup[tid] = shift
     

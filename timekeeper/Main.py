@@ -1,7 +1,5 @@
-
-
 from tkinter import ttk, Tk, StringVar, END, N, S, E, W, DISABLED
-from tkinter.scrolledtext import *
+from tkinter.scrolledtext import ScrolledText
 from timekeeper.ReportEdit import ReportEditApp
 from timekeeper.Popups import PopConfirm
 import time
