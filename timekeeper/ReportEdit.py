@@ -304,3 +304,18 @@ class ViewEditShift():
         self.report_edit.db.remove_shift(self.shift['id'])
         self.root.destroy()
         self.report_edit.filter_data()
+
+
+class ViewEditJob: # View-pane for Job
+
+    def __init__(self):
+        pass
+
+    def edit_job(self):
+        pass
+
+    def delete_prompt(self):
+        pass
+
+    def delete_job(self):
+        pass
