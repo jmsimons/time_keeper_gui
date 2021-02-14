@@ -23,10 +23,10 @@ class Export():
 
     def compile(self):
         # TODO: Preserve white space in notes
-        wrapper = TextWrapper(initial_indent = '\t', subsequent_indent = '\t', fix_sentence_endings = True, replace_whitespace = False)
+        wrapper = TextWrapper(initial_indent = '\t', subsequent_indent = '\t', fix_sentence_endings = True, replace_whitespace = True)
         output = [f'Shift Report for Period: {self.period_start} - {self.period_end}\n']
-        output.append(f'Job: {self.job_selection}\t\tSearch Term: {self.search_term}\n')
-        output.append(f'Period Hours: {self.total_hours}\tPeriod Shifts: {len(self.shifts)}\n\n')
+        output.append(f'Job: {self.job_selection}\t\t\tSearch Term: {self.search_term}\n')
+        output.append(f'Period Hours: {self.total_hours}\t\tPeriod Shifts: {len(self.shifts)}\n\n')
         output.append('* Shifts *')
         for shift in self.shifts:
             output.append(f"\n{shift['job']}\t\t{shift['str_start']}\t\t{shift['hours']}\t\tNotes:")

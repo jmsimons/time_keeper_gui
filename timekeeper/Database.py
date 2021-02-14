@@ -142,19 +142,14 @@ class DB: ### Wrapper class for database functionality ###
         query = s.query(Shift).filter(Shift.complete == True)
         if job_name:
             query = query.filter(Shift.job_name == job_name)
-        if search_term:
-            query = query.filter(Shift.notes.ilike(f'%{search_term}%'))
-        # TODO: rewrite the date filter logic with sqlalchemy methods
-        # shifts = query.all()
         if period_start:
-            query.filter(Shift.start_time >= period_start)
-            # shifts = [i for i in shifts if i.start_time >= period_start]
+            query = query.filter(Shift.start_time >= period_start)
         if period_end:
             period_end += 60 * 60 * 24 # add 24 hours
-            query.filter(Shift.end_time < period_end)
-            # shifts = [i for i in shifts if i.start_time < period_end]
+            query = query.filter(Shift.end_time < period_end)
+        if search_term:
+            query = query.filter(Shift.notes.ilike(f'%{search_term}%'))
         shifts = [i.get_dict() for i in query.all()]
-        # shifts = [i.get_dict() for i in shifts]
         s.close()
         return shifts
     

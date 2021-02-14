@@ -35,12 +35,13 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.table_view = ttk.Treeview(self.table_frame, selectmode = 'browse')
         vbar = ttk.Scrollbar(self.table_frame, orient = 'vertical', command = self.table_view.yview)
         self.table_view.config(yscrollcommand = vbar.set)
+        # TODO: Move table_view setup to separate functions for (Shifts, Tasks, Jobs)
         self.table_view['columns'] = ('1', '2', '3', '4', '5')
         self.table_view['show'] = 'headings'
         self.table_view.column('1', width = 120, anchor = 'w')
         self.table_view.column('2', width = 80, anchor = 'w')
-        self.table_view.column('3', width = 75, anchor = 'w')
-        self.table_view.column('4', width = 45, anchor = 'w')
+        self.table_view.column('3', width = 70, anchor = 'w')
+        self.table_view.column('4', width = 40, anchor = 'w')
         self.table_view.column('5', width = 150, anchor = 'w')
         self.table_view.heading('1', text = 'Job')
         self.table_view.heading('2', text = 'Date')
@@ -63,8 +64,8 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         filter_label.grid(column = 1, row = 1, sticky = W, pady = 5)
         self.search_input.grid(column = 4, row = 2, sticky = (W, E))
         self.totals_label.grid(column = 1, columnspan = 4, row = 4, sticky = W, pady = 5)
-        self.table_frame.grid(column = 1, columnspan = 4, row = 5)
-        self.table_view.grid(column = 1, row = 1, sticky = (N, S, E, W))
+        self.table_frame.grid(column = 1, columnspan = 4, row = 5, sticky = (N, S, E, W))
+        self.table_view.grid(column = 1, columnspan = 1, row = 1, sticky = (N, S, E, W))
         vbar.grid(column = 2, row = 1, sticky = (N, S))
         self.export_menu.grid(column = 1, row = 6, sticky = W)
         self.edit_jobs_button.grid(column = 3, row = 6, sticky = E)
@@ -72,7 +73,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
 
         self.frame.grid(column = 0, row = 0, padx = 5, sticky = (N, S, E, W))
         self.container.grid(column = 0, row = 0, sticky = (N, S, E, W))
-        print("Grid config complete")
+        # print("Grid config complete")
 
         self.job_menu.bind("<ButtonRelease-1>", self.filter_data)
         self.per_start_menu.bind("<ButtonRelease-1>", self.filter_data)
@@ -81,14 +82,13 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.search_input.bind("<Return>", self.filter_data)
         self.table_view.bind("<Double-Button-1>", self.view_shift)
         self.export_menu.bind("<ButtonRelease-1>", self.export)
-        print("Init complete")
+        # print("Init complete")
 
     def build_menu(self):
         self.choices = ['All Jobs'] + self.db.get_jobs()
         self.job_menu = ttk.OptionMenu(self.frame, self.job_selection, 'All Jobs', *self.choices)
         self.job_menu.config(width = 10)
         self.job_menu.grid(column = 1, row = 2, sticky = (W, E))
-        self.job_selection.set('All Jobs')
     
     def build_date_select(self):
         format = '%Y/%m/%d'
@@ -106,6 +106,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.per_end_menu.grid(column = 3, row = 2, sticky = (W, E))
 
     def filter_data(self, event = None):
+        # print("Filtering Data...")
         job_name = self.job_selection.get()
         if job_name == self.choices[0]:
             job_name = None
@@ -120,18 +121,24 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.populate_table()
     
     def clear_table(self):
+        # print("Clearing Table...")
         for tid in self.tid_lookup:
             self.table_view.delete(tid)
         self.tid_lookup = {}
         # self.table_view.clear_rows()
 
     def get_data(self, job_name = None, period_start = None, period_end = None, search_term = None):
+        print("Getting Data:", job_name, period_start, period_end)
         self.shifts = self.db.report_shifts(job_name = job_name, period_start = period_start, period_end = period_end, search_term = search_term)
+        if not job_name:
+            job_name = 'All Jobs'
+        self.job_selection.set(job_name)
         self.total_shifts = len(self.shifts)
         self.total_hours = sum([i['hours'] for i in self.shifts])
         self.total_hours = round(self.total_hours, 2)
     
     def populate_table(self):
+        # print("Populating Items:", len(self.shifts))
         self.totals_label['text'] = f'Hours: {self.total_hours}\tShifts: {self.total_shifts}'
         for shift in self.shifts[::-1]:
             if len(shift['notes']) < 20:
@@ -141,6 +148,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
             start = shift['str_start'].split()
             values = (shift['job'], start[0], start[1], shift['hours'], notes)
             tid = self.table_view.insert('', 'end', values = values)
+            # tid = self.table_view.insert_row(*values)
             self.tid_lookup[tid] = shift
     
     def view_job_editor(self):
@@ -165,7 +173,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         shift_view.root.mainloop()
 
 
-class EditJobs():
+class EditJobs(): # TODO: Remove
 
     def __init__(self, ReportEdit):
         self.report_edit = ReportEdit
