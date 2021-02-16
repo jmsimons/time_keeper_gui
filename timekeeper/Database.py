@@ -86,6 +86,43 @@ class Shift(Base): # Shift table definition #
         return shift_dict
 
 
+class Task(Base):
+    __tablename__ = 'task'
+    id = Column(Integer, primary_key = True)
+    title = Column(String(20), nullable = False)
+    time_created = Column(Float, nullable = False)
+    notes = Column(String(1024))
+    complete = Column(Boolean)
+
+    def __init__(self, title, notes):
+        self.title = title
+        self.time_created = time.time()
+        self.notes = ""
+        self.complete = False
+    
+    def __repr__(self):
+        return f'Task(ID: {self.id}, Title: {self.title}, Created: {self.time_created}, Notes_len: {len(self.notes)}, Complete: {self.complete})'
+
+    def update(self, column, value):
+        if column == 'title':
+            self.title = value
+        elif column == 'complete':
+            self.complete = bool(value)
+        elif column == 'notes':
+            self.notes = str(value)
+        return True
+
+    def get_dict(self):
+        format = '%Y/%m/%d %H:%M:%S'
+        time_created = time.strftime(format, time.localtime(self.time_created))
+        shift_dict = {'id': self.id,
+                      'title': self.title,
+                      'time_created': time_created,
+                      'complete': self.complete,
+                      'notes': self.notes if self.notes != None else ''}
+        return shift_dict
+
+
 class DB: ### Wrapper class for database functionality ###
 
     def __init__(self, db_filename):
