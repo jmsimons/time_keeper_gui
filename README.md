@@ -7,3 +7,5 @@ Python gui application for personal time tracking.
 * Report and Edit displays jobs, shifts, and tasks, and allows you to open the ViewEdit pane for table item.
 
 $python3 run.py will launch the program
+
+Support for tasks is currently under construction. Once implemented, you will be able to create titled tasks, add comments, and mark as complete. Tasks will be searchable in the Report and Edit pane.
