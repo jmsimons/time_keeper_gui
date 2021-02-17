@@ -1,4 +1,4 @@
-from tkinter import ttk, Tk, StringVar, END, N, S, E, W, DISABLED
+from tkinter import ttk, Tk, StringVar, Listbox, MULTIPLE, SINGLE, END, N, S, E, W, DISABLED
 from tkinter.scrolledtext import ScrolledText
 from timekeeper.ReportEdit import ReportEditApp
 from timekeeper.Popups import PopConfirm
@@ -93,27 +93,45 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         self.root.resizable(False, False)
         self.root.overrideredirect(0)
 
+        self.tm1_selection = StringVar(self.root)
+        self.tm2_selection = StringVar(self.root)
+
         self.container = ttk.Frame(self.root)
         self.frame = ttk.Frame(self.container)
 
         self.job_label = ttk.Label(self.frame, text = f'Job: {job_name}')
         self.elapsed_time_label = ttk.Label(self.frame, width = 18)
+
+        self.task_frame = ttk.Frame(self.frame)
+        self.task_label = ttk.Label(self.task_frame, text = "Tasks:")
+        self.tm1_options, self.tm2_options = ('All Job Tasks', 'Shift Tasks Only'), ()
+        self.task_menu1 = ttk.OptionMenu(self.frame, self.tm1_selection, self.tm1_options[0], *self.tm1_options)
+        self.task_list = Listbox(self.task_frame, selectmode = SINGLE, width = 20, relief = 'sunken')
+        vbar = ttk.Scrollbar(self.task_frame, orient = 'vertical', command = self.task_list.yview)
+        self.task_list.config(yscrollcommand = vbar.set)
+        self.new_task_button = ttk.Button(self.frame, text = "New Task", command = self.new_task)
+
         self.button_frame = ttk.Frame(self.frame)
         self.pause_button = ttk.Button(self.button_frame, text = 'Pause', command = self.toggle_break, width = 7)
-        self.save_button = ttk.Button(self.button_frame, text = 'Stop and Save', command = self.end_prompt)
+        # TODO: Add info button
         self.cancel_button = ttk.Button(self.frame, text = 'Cancel', command = self.cancel_prompt)
         self.notes = ScrolledText(self.frame, width = 60, height = 15, relief = 'sunken')
-        # TODO: Add 'Prior Shifts' button that links to 'self.launch_report_edit'
         self.report_job_button = ttk.Button(self.frame, text = 'Prior Shifts', command = self.launch_report_edit)
+        self.save_button = ttk.Button(self.frame, text = 'Stop and Save', command = self.end_prompt)
 
-        self.job_label.grid(column = 1, columnspan = 2, row = 1, sticky = W, pady = 5)
-        self.elapsed_time_label.grid(column = 3, row = 1, sticky = E)
-        self.button_frame.grid(column = 1, columnspan = 2, row = 2, sticky = W)
-        self.pause_button.grid(column = 1, row = 1, sticky = W)
-        self.save_button.grid(column = 2, row = 1, sticky = W)
-        self.cancel_button.grid(column = 3, row = 2, sticky = E)
-        self.notes.grid(column = 1, columnspan = 3, row = 3, pady = (5, 5))
-        self.report_job_button.grid(column = 1, row = 4, sticky = W)
+        self.job_label.grid(column = 2, columnspan = 2, row = 1, sticky = W, pady = 5)
+        self.elapsed_time_label.grid(column = 4, row = 1, sticky = E)
+        self.task_menu1.grid(column = 1, row = 2, sticky = (E, W))
+        self.task_list.grid(column = 1, row = 1, sticky = (N, S))
+        vbar.grid(column = 2, row = 1, sticky = (N, S))
+        self.task_frame.grid(column = 1, row = 3, sticky = (N, S), pady = (5, 5))
+        self.new_task_button.grid(column = 1, row = 4, sticky = W)
+        self.button_frame.grid(column = 2, columnspan = 2, row = 2, sticky = W)
+        self.pause_button.grid(column = 2, row = 1, sticky = W)
+        self.cancel_button.grid(column = 4, row = 2, sticky = E)
+        self.notes.grid(column = 2, columnspan = 3, row = 3, pady = (5, 5))
+        self.report_job_button.grid(column = 2, row = 4, sticky = W)
+        self.save_button.grid(column = 4, row = 4, sticky = E)
         self.frame.grid(column = 0, row = 0, padx = 5, pady = 5)
         self.container.grid(column = 0, row = 0)
 
@@ -121,6 +139,16 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
 
         self.time_counter()
         self.auto_save()
+
+    def get_tasks(self):
+        self.tasks = self.db.report_tasks(shift_id = self.id)
+        self.task_list.delete(0, END)
+        for task in self.tasks:
+            self.task_list.insert(END, task['title'])
+    
+    def new_task(self):
+        pass
+        # TODO: Show new task pop-up
     
     def time_counter(self):
         if not self.break_start:
