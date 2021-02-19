@@ -182,19 +182,23 @@ class DB: ### Wrapper class for database functionality ###
                 shift.complete = True
         return len(incomplete)
 
-    def report_shifts(self, job_name = None, period_start = None, period_end = None, search_term = None):
+    def report_shifts(self, shift_id = None, job_name = None, period_start = None, period_end = None, search_term = None):
         # print('Filtering by job:', job_name, 'per_start:', period_start, 'per_end:', period_end, 'search_term:', search_term)
         with self.session() as s:
-            query = s.query(Shift).filter(Shift.complete == True)
-            if job_name:
-                query = query.filter(Shift.job_name == job_name)
-            if period_start:
-                query = query.filter(Shift.start_time >= period_start)
-            if period_end:
-                period_end += 60 * 60 * 24 # add 24 hours
-                query = query.filter(Shift.end_time < period_end)
-            if search_term:
-                query = query.filter(Shift.notes.ilike(f'%{search_term}%'))
+            query = s.query(Shift)
+            if shift_id:
+                query = query.filter(Shift.id == shift_id)
+            else:
+                query = query.filter(Shift.complete == True)
+                if job_name:
+                    query = query.filter(Shift.job_name == job_name)
+                if period_start:
+                    query = query.filter(Shift.start_time >= period_start)
+                if period_end:
+                    period_end += 60 * 60 * 24 # add 24 hours
+                    query = query.filter(Shift.end_time < period_end)
+                if search_term:
+                    query = query.filter(Shift.notes.ilike(f'%{search_term}%'))
             shifts = [i.get_dict() for i in query.all()]
         return shifts
     

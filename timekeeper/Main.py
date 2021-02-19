@@ -140,7 +140,7 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         self.container.grid(column = 0, row = 0)
 
         self.root.protocol("WM_DELETE_WINDOW", self.cancel_prompt)
-        self.task_list.bind("<Button-1>", self.focus_task)
+        self.task_list.bind("<ButtonRelease-1>", self.focus_task)
 
         self.time_counter()
         self.auto_save()
@@ -152,6 +152,7 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         else:
             kwargs = {"shift_id": self.id}
         tasks = self.db.report_tasks(**kwargs)
+        # print(tasks)
         for task in tasks:
             self.tasks[task["id"]] = task
         self.task_list.delete(0, END)
@@ -170,10 +171,25 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         self.task_index.append(task["id"])
     
     def focus_task(self, event = None):
-        cur = self.task_list.curselection()
-        pass
-        # TODO: get notes from textbox, save to current task or self.db.update_shift(self.id, notes = notes)
-        # TODO: get current task_list selection and display task notes
+        new_cur = self.task_list.curselection()[0]
+        if new_cur == self.cur_task:
+            return
+        notes = self.notes.get(0.0, END).strip('\n')
+        if self.cur_task: # if the notes being displayed belong to a task
+            task_id = self.task_index[self.cur_task]
+            self.tasks[task_id]["notes"] = notes
+        else:
+            self.db.update_shift(self.id, notes = notes)
+        if new_cur:
+            task_id = self.task_index[new_cur]
+            notes = self.tasks[task_id]["notes"]
+        else:
+            shift = self.db.report_shifts(shift_id = self.id)[0]
+            # print(self.id, shift)
+            notes = shift["notes"]
+        self.notes.delete('0.0', END)
+        self.notes.insert(END, notes)
+        self.cur_task = new_cur
         
     def time_counter(self):
         if not self.break_start:
@@ -205,14 +221,12 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         else:
             break_time = self.break_time
         end_time = time.time()
-        notes = self.notes.get(1.0, END)
+        notes = self.notes.get(0.0, END).strip('\n')
         if self.cur_task: # if the notes being displayed belong to a task
-            # print(cur)
             task_id = self.task_index[self.cur_task]
             self.tasks[task_id]["notes"] = notes
             notes = None
         self.db.update_shift(self.id, end_time = end_time, break_time = break_time, notes = notes)
-        # print(self.tasks)
         for _, task in self.tasks.items():
             self.db.update_task(**task)
 
@@ -239,6 +253,5 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
     
     def close(self):
         for val in self.events.values():
-            # print("Canceling command:", val)
             self.root.after_cancel(val)
         self.root.destroy()
