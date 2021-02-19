@@ -9,3 +9,7 @@ Python gui application for personal time tracking.
 $python3 run.py will launch the program
 
 Support for tasks is currently under construction. Once implemented, you will be able to create titled tasks, add comments, and mark as complete. Tasks will be searchable in the Report and Edit pane.
+
+
+*** Areas of growth that I invite collaboration on ***
+- Add styles to scrollbars and other elements. If you're familiar with ttk Styles there are a few small tweeks that would make the UI look cleaner.
