@@ -86,7 +86,9 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         self.break_start = 0
         self.break_time = 0
         self.id = self.db.add_shift(self.job_name, self.start_time, None, self.break_time, None)
-        print(self.id)
+        self.tasks = {}
+        self.task_index = []
+        self.cur_task = 0
 
         self.root = Tk()
         self.root.title(f'Shift - {job_name}')
@@ -106,7 +108,8 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         self.task_label = ttk.Label(self.task_frame, text = "Tasks:")
         self.tm1_options, self.tm2_options = ('All Job Tasks', 'Shift Tasks Only'), ()
         self.task_menu1 = ttk.OptionMenu(self.frame, self.tm1_selection, self.tm1_options[0], *self.tm1_options)
-        self.task_list = Listbox(self.task_frame, selectmode = SINGLE, width = 20, relief = 'sunken')
+        self.task_entry = ttk.Entry(self.frame)
+        self.task_list = Listbox(self.task_frame, selectmode = SINGLE, width = 20, height = 12, relief = 'sunken')
         vbar = ttk.Scrollbar(self.task_frame, orient = 'vertical', command = self.task_list.yview)
         self.task_list.config(yscrollcommand = vbar.set)
         self.new_task_button = ttk.Button(self.frame, text = "New Task", command = self.new_task)
@@ -121,7 +124,8 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
 
         self.job_label.grid(column = 2, columnspan = 2, row = 1, sticky = W, pady = 5)
         self.elapsed_time_label.grid(column = 4, row = 1, sticky = E)
-        self.task_menu1.grid(column = 1, row = 2, sticky = (E, W))
+        self.task_menu1.grid(column = 1, row = 1, sticky = (E, W), padx = (0, 15))
+        self.task_entry.grid(column = 1, row = 2, sticky = (E, W), padx = (0, 15))
         self.task_list.grid(column = 1, row = 1, sticky = (N, S))
         vbar.grid(column = 2, row = 1, sticky = (N, S))
         self.task_frame.grid(column = 1, row = 3, sticky = (N, S), pady = (5, 5))
@@ -136,20 +140,41 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         self.container.grid(column = 0, row = 0)
 
         self.root.protocol("WM_DELETE_WINDOW", self.cancel_prompt)
+        self.task_list.bind("<Button-1>", self.focus_task)
 
         self.time_counter()
         self.auto_save()
+        self.get_tasks()
 
     def get_tasks(self):
-        self.tasks = self.db.report_tasks(shift_id = self.id)
+        if "Job" in self.tm1_selection.get():
+            kwargs = {"job_name": self.job_name}
+        else:
+            kwargs = {"shift_id": self.id}
+        tasks = self.db.report_tasks(**kwargs)
+        for task in tasks:
+            self.tasks[task["id"]] = task
         self.task_list.delete(0, END)
-        for task in self.tasks:
+        self.task_index = []
+        self.task_list.insert(END, "Shift Notes")
+        self.task_index.append(None)
+        for _, task in self.tasks.items():
             self.task_list.insert(END, task['title'])
+            self.task_index.append(task["id"])
     
     def new_task(self):
-        pass
-        # TODO: Show new task pop-up
+        task_name = self.task_entry.get()
+        task = self.db.add_task(self.id, self.job_name, task_name)
+        self.tasks[task["id"]] = task
+        self.task_list.insert(END, task['title'])
+        self.task_index.append(task["id"])
     
+    def focus_task(self, event = None):
+        cur = self.task_list.curselection()
+        pass
+        # TODO: get notes from textbox, save to current task or self.db.update_shift(self.id, notes = notes)
+        # TODO: get current task_list selection and display task notes
+        
     def time_counter(self):
         if not self.break_start:
             elapsed_time = time.gmtime(time.time() - self.start_time - self.break_time)
@@ -161,7 +186,7 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
     
     def auto_save(self):
         self.save_update()
-        self.events['auto_save'] = self.root.after(5000, self.auto_save)
+        self.events['auto_save'] = self.root.after(1000, self.auto_save)
 
     def toggle_break(self):
         if not self.break_start:
@@ -181,7 +206,15 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
             break_time = self.break_time
         end_time = time.time()
         notes = self.notes.get(1.0, END)
-        self.db.update_shift(self.id, end_time, break_time, notes)
+        if self.cur_task: # if the notes being displayed belong to a task
+            # print(cur)
+            task_id = self.task_index[self.cur_task]
+            self.tasks[task_id]["notes"] = notes
+            notes = None
+        self.db.update_shift(self.id, end_time = end_time, break_time = break_time, notes = notes)
+        # print(self.tasks)
+        for _, task in self.tasks.items():
+            self.db.update_task(**task)
 
     def end_prompt(self):
         popup = PopConfirm("Save and exit shift?", self.end_shift)

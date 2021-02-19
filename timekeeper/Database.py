@@ -106,7 +106,7 @@ class Task(Base):
         self.complete = False
     
     def __repr__(self):
-        return f'Task(ID: {self.id}, Shift_ID: {self.shift_id}, Job: {self.job_id},  Title: {self.title}, Created: {self.time_created}, Notes_len: {len(self.notes)}, Complete: {self.complete})'
+        return f'Task(ID: {self.id}, Shift_ID: {self.shift_id}, Job: {self.job_name},  Title: {self.title}, Created: {self.time_created}, Notes_len: {len(self.notes)}, Complete: {self.complete})'
 
     def update(self, column, value):
         if column == 'title':
@@ -120,12 +120,13 @@ class Task(Base):
     def get_dict(self):
         format = '%Y/%m/%d %H:%M:%S'
         time_created = time.strftime(format, time.localtime(self.time_created))
-        shift_dict = {'id': self.id,
+        task_dict = {'id': self.id,
+                      'job_name': self.job_name,
                       'title': self.title,
                       'time_created': time_created,
                       'complete': self.complete,
                       'notes': self.notes if self.notes != None else ''}
-        return shift_dict
+        return task_dict
 
 
 class DB: ### Wrapper class for database functionality ###
@@ -160,16 +161,19 @@ class DB: ### Wrapper class for database functionality ###
     
     def add_shift(self, job_name, start_time, end_time, break_time, notes):
         shift = Shift(job_name, start_time, end_time, break_time, notes)
-        # print(shift)
+        # print(shift, job_name, start_time, end_time, break_time, notes)
         with self.session() as s:
             s.add(shift)
+            s.commit()
             shift_id = shift.id
-        return shift_id
+            return shift_id
     
     def add_task(self, shift_id, job_name, title, notes = None):
         task = Task(job_name, shift_id, title, notes = notes)
         with self.session() as s:
             s.add(task)
+            s.commit()
+            return task.get_dict()
     
     def check_incomplete(self):
         with self.session() as s:
@@ -219,13 +223,19 @@ class DB: ### Wrapper class for database functionality ###
             job = s.query(Job).filter_by(name = cur_name).first()
             job.name = new_name
     
-    def update_shift(self, id, end_time, break_time, notes):
+    def update_shift(self, id, end_time = None, break_time = None, notes = None):
         with self.session() as s:
             # print("Autosaving shift...")
             shift = s.query(Shift).filter_by(id = id).first()
-            shift.end_time = end_time
-            shift.break_time = break_time
-            shift.notes = notes
+            if end_time: shift.end_time = end_time
+            if break_time: shift.break_time = break_time
+            if notes: shift.notes = notes
+        
+    def update_task(self, id, notes, complete, **kwargs):
+        with self.session() as s:
+            task = s.query(Task).filter_by(id = id).first()
+            task.notes = notes
+            task.complete = complete
 
     def complete_shift(self, id):
         with self.session() as s:
