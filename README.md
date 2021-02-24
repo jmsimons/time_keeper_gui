@@ -8,7 +8,7 @@ Python gui application for personal time tracking. I use this program to track t
 
 $python3 run.py will launch the program
 
-*Support for tasks is currently under construction. Once implemented, you will be able to create titled tasks, add comments, and mark as complete from within a shift. Tasks will be searchable in the Report and Edit pane.
+*Support for tasks is currently under construction. Once finished, you will be able to mark tasks as complete from within a shift, and also view in TaskEdit window from Report and Edit. Tasks will be searchable in the Report and Edit pane.
 
 
 *** Areas of growth that I invite collaboration on or that I will get to eventually ***
