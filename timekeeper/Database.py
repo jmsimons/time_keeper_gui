@@ -181,6 +181,11 @@ class DB: ### Wrapper class for database functionality ###
             else:
                 jobs = [i.name for i in s.query(Job).all()]
         return jobs
+    
+    def get_shift(self, shift_id):
+        with self.session() as s:
+            shift = s.query(Shift).filter(Shift.id == shift_id).first()
+            return shift.get_dict()
 
     def report_shifts(self, shift_id = None, job_name = None, period_start = None, period_end = None, search_term = None):
         # print('Filtering by job:', job_name, 'per_start:', period_start, 'per_end:', period_end, 'search_term:', search_term)

@@ -230,7 +230,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         try: tid = self.table_view.focus()
         except: return
         shift_id = self.tid_lookup[tid]
-        shift = self.db.report_shifts(shift_id = shift_id)
+        shift = self.db.get_shift(shift_id)
         shift_view = ViewEditShift(self, shift)
         shift_view.root.mainloop()
 
