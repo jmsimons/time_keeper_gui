@@ -5,7 +5,7 @@ from timekeeper.Popups import PopConfirm
 import time
 
 
-class MainApp(): ### Main application window gui elements, data, and methods ###
+class MainApp(): ### Main application window ###
 
     def __init__(self, db):
         self.db = db
@@ -43,13 +43,12 @@ class MainApp(): ### Main application window gui elements, data, and methods ###
         self.load_view()
     
     def load_view(self):
-        #load job menu
-        self.choices = self.db.get_jobs()
+        self.choices = self.db.report_jobs()
         self.job_menu = ttk.OptionMenu(self.frame, self.selection, 'Choose Job', *self.choices)
         self.job_menu.grid(column = 1, row = 2, sticky = W+E)
         self.selection.set('Choose Job')
 
-        # check for incomplete shifts to recover
+        # check for incomplete shifts to recover #
         recovered = self.db.check_incomplete()
         if recovered:
             self.recover_label["text"] = f"Recovered({recovered})"
@@ -75,7 +74,7 @@ class MainApp(): ### Main application window gui elements, data, and methods ###
         self.report_edit_window.root.mainloop()
 
 
-class ShiftApp(): ### In-progress Shift application window gui elements, data, and methods ###
+class ShiftApp(): ### In-progress Shift application ###
 
     def __init__(self, db, job_name):
         self.db = db
@@ -140,22 +139,26 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         self.container.grid(column = 0, row = 0)
 
         self.root.protocol("WM_DELETE_WINDOW", self.cancel_prompt)
+        self.task_menu1.bind("<ButtonRelease-1>", self.filter_tasks) # filter_tasks clears notes
+        self.task_entry.bind("<KeyRelease>", self.filter_tasks)
         self.task_list.bind("<ButtonRelease-1>", self.focus_task)
+        self.task_list.bind("<Double-Button-1>", self.copy_task_title)
 
         self.time_counter()
         self.auto_save()
         self.get_tasks()
 
-    def get_tasks(self):
+    def get_tasks(self, event = None, **kwargs): ## Gets set of filtered tasks from db ##
         if "Job" in self.tm1_selection.get():
-            kwargs = {"job_name": self.job_name}
+            kwargs["job_name"] = self.job_name
         else:
-            kwargs = {"shift_id": self.id}
+            kwargs["shift_id"] = self.id
         tasks = self.db.report_tasks(**kwargs)
-        # print(tasks)
+        self.tasks.clear()
         for task in tasks:
             self.tasks[task["id"]] = task
         self.task_list.delete(0, END)
+        self.cur_task = 0
         self.task_index = []
         self.task_list.insert(END, "Shift Notes")
         self.task_index.append(None)
@@ -163,33 +166,49 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
             self.task_list.insert(END, task['title'])
             self.task_index.append(task["id"])
     
-    def new_task(self):
-        task_name = self.task_entry.get()
-        task = self.db.add_task(self.id, self.job_name, task_name)
-        self.tasks[task["id"]] = task
-        self.task_list.insert(END, task['title'])
-        self.task_index.append(task["id"])
-    
-    def focus_task(self, event = None):
-        new_cur = self.task_list.curselection()[0]
-        if new_cur == self.cur_task:
-            return
-        notes = self.notes.get(0.0, END).strip('\n')
-        if self.cur_task: # if the notes being displayed belong to a task
-            task_id = self.task_index[self.cur_task]
-            self.tasks[task_id]["notes"] = notes
-        else:
-            self.db.update_shift(self.id, notes = notes)
-        if new_cur:
-            task_id = self.task_index[new_cur]
-            notes = self.tasks[task_id]["notes"]
-        else:
-            shift = self.db.report_shifts(shift_id = self.id)[0]
-            # print(self.id, shift)
-            notes = shift["notes"]
-        self.notes.delete('0.0', END)
+    def filter_tasks(self, event = None):
+        search_term = self.task_entry.get()
+        self.get_tasks(search_term = search_term)
+        notes = self.db.report_shifts(shift_id = self.id)[0]["notes"]
+        self.notes.delete("0.0", END)
         self.notes.insert(END, notes)
-        self.cur_task = new_cur
+    
+    def new_task(self):
+        task_title = self.task_entry.get()
+        if task_title not in ('', ' '):
+            task = self.db.add_task(self.id, self.job_name, task_title)
+            self.task_entry.delete(0, END)
+            self.get_tasks()
+            self.task_list.activate(self.task_index.index(task["id"]))
+    
+    def focus_task(self, event = None): ## displays notes for the currently selected task ##
+        if self.task_list.curselection():
+            new_cur = self.task_list.curselection()[0]
+            if new_cur == self.cur_task:
+                return
+            notes = self.notes.get(0.0, END).strip('\n')
+            if self.cur_task: # if the notes being displayed belong to a task
+                task_id = self.task_index[self.cur_task]
+                self.tasks[task_id]["notes"] = notes
+            else:
+                self.db.update_shift(self.id, notes = notes)
+            if new_cur: # if the new notes to be displayed belong to a task
+                task_id = self.task_index[new_cur]
+                notes = self.tasks[task_id]["notes"]
+            else:
+                shift = self.db.report_shifts(shift_id = self.id)[0]
+                notes = shift["notes"]
+            self.notes.delete('0.0', END)
+            self.notes.insert(END, notes)
+            self.cur_task = new_cur
+    
+    def copy_task_title(self, event = None): ## Copies title from current selection in task_list to task_entry ##
+        cur = self.task_list.curselection()[0]
+        if cur:
+            task = self.tasks[self.task_index[cur]]
+            self.task_entry.delete(0, END)
+            self.task_entry.insert(0, task["title"])
+            self.filter_tasks()
         
     def time_counter(self):
         if not self.break_start:
@@ -203,19 +222,8 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
     def auto_save(self):
         self.save_update()
         self.events['auto_save'] = self.root.after(1000, self.auto_save)
-
-    def toggle_break(self):
-        if not self.break_start:
-            self.break_start = time.time()
-            self.job_label['text'] = f'{self.job_name} - Paused'
-            self.pause_button['text'] = 'Resume'
-        else:
-            self.break_time += time.time() - self.break_start
-            self.break_start = 0
-            self.job_label['text'] = self.job_name
-            self.pause_button['text'] = 'Pause'
     
-    def save_update(self):
+    def save_update(self): ## Commits current state for shift and tasks to db ##
         if self.break_start:
             break_time = self.break_time + (time.time() - self.break_start)
         else:
@@ -229,6 +237,17 @@ class ShiftApp(): ### In-progress Shift application window gui elements, data, a
         self.db.update_shift(self.id, end_time = end_time, break_time = break_time, notes = notes)
         for _, task in self.tasks.items():
             self.db.update_task(**task)
+
+    def toggle_break(self):
+        if not self.break_start:
+            self.break_start = time.time()
+            self.job_label['text'] = f'{self.job_name} - Paused'
+            self.pause_button['text'] = 'Resume'
+        else:
+            self.break_time += time.time() - self.break_start
+            self.break_start = 0
+            self.job_label['text'] = self.job_name
+            self.pause_button['text'] = 'Pause'
 
     def end_prompt(self):
         popup = PopConfirm("Save and exit shift?", self.end_shift)

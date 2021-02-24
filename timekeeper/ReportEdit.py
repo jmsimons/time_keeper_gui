@@ -19,23 +19,80 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.container = ttk.Frame(self.root)
         self.frame = ttk.Frame(self.container)
         
-        filter_label = ttk.Label(self.frame, text = 'Filter Shifts:')
+        filter_label = ttk.Label(self.frame, text = 'Filter:')
+        self.view_selection = StringVar(self.root)
         self.job_selection = StringVar(self.root)
         self.start_selection = StringVar(self.root)
         self.end_selection = StringVar(self.root)
         self.export_selection = StringVar(self.root)
-        self.build_menu()
-        self.get_data(**kwargs)
-        self.build_date_select()
+        self.build_menus()
         self.search_input = ttk.Entry(self.frame, width = 16)#, placeholder = 'Search Notes...'
-        self.filter_button = ttk.Button(self.frame, text = 'Filter', command = self.filter_data)
 
         self.totals_label = ttk.Label(self.frame, text = 'Hours: \tShifts:')
         self.table_frame = ttk.Frame(self.frame)
+        self.build_table(**kwargs)
+        self.build_date_select()
+
+        self.edit_jobs_button = ttk.Button(self.frame, text = 'Edit Jobs', command = self.view_job_editor)
+        export_options = ('Text', 'PDF')
+        self.export_menu = ttk.OptionMenu(self.frame, self.export_selection, 'Export', *export_options)
+        self.view_shift_button = ttk.Button(self.frame, text = 'View/Edit Shift', command = self.view_shift)
+
+        filter_label.grid(column = 1, row = 1, sticky = W, pady = 5)
+        self.search_input.grid(column = 5, row = 2, sticky = (W, E))
+        self.totals_label.grid(column = 1, columnspan = 5, row = 4, sticky = W, pady = 5)
+        self.table_frame.grid(column = 1, columnspan = 5, row = 5, sticky = (N, S, E, W))
+        self.export_menu.grid(column = 1, columnspan = 2, row = 6, sticky = W)
+        self.edit_jobs_button.grid(column = 4, row = 6, sticky = E)
+        self.view_shift_button.grid(column = 5, row = 6, sticky = E, pady = 5)
+
+        self.frame.grid(column = 0, row = 0, padx = 5, sticky = (N, S, E, W))
+        self.container.grid(column = 0, row = 0, sticky = (N, S, E, W))
+
+        self.view_menu.bind("<ButtonRelease-1>", self.build_table)
+        self.job_menu.bind("<ButtonRelease-1>", self.filter_data)
+        self.per_start_menu.bind("<ButtonRelease-1>", self.filter_data)
+        self.per_end_menu.bind("<ButtonRelease-1>", self.filter_data)
+        self.search_input.bind('<KeyRelease>', self.filter_data)
+        self.search_input.bind("<Return>", self.filter_data)
+        self.table_view.bind("<Double-Button-1>", self.view_shift)
+        self.export_menu.bind("<ButtonRelease-1>", self.export)
+
+    def build_menus(self):
+        self.job_choices = ['All Jobs'] + self.db.report_jobs()
+        self.job_menu = ttk.OptionMenu(self.frame, self.job_selection, 'All Jobs', *self.job_choices)
+        self.job_menu.config(width = 10)
+
+        self.view_choices = ("Shifts", "Tasks", "Jobs")
+        self.view_menu = ttk.OptionMenu(self.frame, self.view_selection, self.view_choices[0], *self.view_choices)
+        self.job_menu.config(width = 5)
+
+        self.view_menu.grid(column = 2, row = 1, sticky = E)
+        self.job_menu.grid(column = 1, columnspan = 2, row = 2, sticky = (W, E))
+    
+    def build_table(self, event = None, **kwargs):
         self.table_view = ttk.Treeview(self.table_frame, selectmode = 'browse')
         vbar = ttk.Scrollbar(self.table_frame, orient = 'vertical', command = self.table_view.yview)
         self.table_view.config(yscrollcommand = vbar.set)
-        # TODO: Move table_view setup to separate functions for (Shifts, Tasks, Jobs)
+        self.table_view.grid(column = 1, columnspan = 1, row = 1, sticky = (N, S, E, W))
+        vbar.grid(column = 2, row = 1, sticky = (N, S))
+
+        view_selection = self.view_selection.get()
+        if view_selection == self.view_choices[0]:
+            self.job_menu.config(state = NORMAL)
+            self.shifts_table()
+        elif view_selection == self.view_choices[1]:
+            self.job_menu.config(state = NORMAL)
+            self.tasks_table()
+        elif view_selection == self.view_choices[2]:
+            # self.job_menu set to 'All Jobs'
+            self.job_menu.config(state = DISABLED)
+            self.jobs_table()
+        self.tid_lookup = {}
+        self.get_rows(**kwargs)
+        self.populate_table()
+
+    def shifts_table(self):
         self.table_view['columns'] = ('1', '2', '3', '4', '5')
         self.table_view['show'] = 'headings'
         self.table_view.column('1', width = 120, anchor = 'w')
@@ -48,47 +105,30 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.table_view.heading('3', text = 'Start')
         self.table_view.heading('4', text = 'Hours')
         self.table_view.heading('5', text = 'Notes')
-        # self.table_view = GridTable(self.table_frame, num_cols = 5)
-        # self.table_view.add_heading('Job', column = 1)
-        # self.table_view.add_heading('Start', column = 2, columnspan = 2)
-        # self.table_view.add_heading('Hours', column = 4)
-        # self.table_view.add_heading('Notes', column = 5)
-        self.tid_lookup = {}
-        self.populate_table()
-
-        self.edit_jobs_button = ttk.Button(self.frame, text = 'Edit Jobs', command = self.view_job_editor)
-        export_options = ('Text', 'PDF')
-        self.export_menu = ttk.OptionMenu(self.frame, self.export_selection, 'Export', *export_options)
-        self.view_shift_button = ttk.Button(self.frame, text = 'View/Edit Shift', command = self.view_shift)
-
-        filter_label.grid(column = 1, row = 1, sticky = W, pady = 5)
-        self.search_input.grid(column = 4, row = 2, sticky = (W, E))
-        self.totals_label.grid(column = 1, columnspan = 4, row = 4, sticky = W, pady = 5)
-        self.table_frame.grid(column = 1, columnspan = 4, row = 5, sticky = (N, S, E, W))
-        self.table_view.grid(column = 1, columnspan = 1, row = 1, sticky = (N, S, E, W))
-        vbar.grid(column = 2, row = 1, sticky = (N, S))
-        self.export_menu.grid(column = 1, row = 6, sticky = W)
-        self.edit_jobs_button.grid(column = 3, row = 6, sticky = E)
-        self.view_shift_button.grid(column = 4, row = 6, sticky = E, pady = 5)
-
-        self.frame.grid(column = 0, row = 0, padx = 5, sticky = (N, S, E, W))
-        self.container.grid(column = 0, row = 0, sticky = (N, S, E, W))
-        # print("Grid config complete")
-
-        self.job_menu.bind("<ButtonRelease-1>", self.filter_data)
-        self.per_start_menu.bind("<ButtonRelease-1>", self.filter_data)
-        self.per_end_menu.bind("<ButtonRelease-1>", self.filter_data)
-        self.search_input.bind('<KeyRelease>', self.filter_data)
-        self.search_input.bind("<Return>", self.filter_data)
-        self.table_view.bind("<Double-Button-1>", self.view_shift)
-        self.export_menu.bind("<ButtonRelease-1>", self.export)
-        # print("Init complete")
-
-    def build_menu(self):
-        self.choices = ['All Jobs'] + self.db.get_jobs()
-        self.job_menu = ttk.OptionMenu(self.frame, self.job_selection, 'All Jobs', *self.choices)
-        self.job_menu.config(width = 10)
-        self.job_menu.grid(column = 1, row = 2, sticky = (W, E))
+    
+    def tasks_table(self):
+        self.table_view['columns'] = ('1', '2', '3', '4')
+        self.table_view['show'] = 'headings'
+        self.table_view.column('1', width = 120, anchor = 'w')
+        self.table_view.column('2', width = 80, anchor = 'w')
+        self.table_view.column('3', width = 100, anchor = 'w')
+        self.table_view.column('4', width = 160, anchor = 'w')
+        self.table_view.heading('1', text = 'Job')
+        self.table_view.heading('2', text = 'Date')
+        self.table_view.heading('3', text = 'Created')
+        self.table_view.heading('4', text = 'Title')
+    
+    def jobs_table(self):
+        self.table_view['columns'] = ('1', '2', '3', '4')
+        self.table_view['show'] = 'headings'
+        self.table_view.column('1', width = 120, anchor = 'w')
+        self.table_view.column('2', width = 80, anchor = 'w')
+        self.table_view.column('3', width = 100, anchor = 'w')
+        self.table_view.column('4', width = 160, anchor = 'w')
+        self.table_view.heading('1', text = 'Job')
+        self.table_view.heading('2', text = 'Date')
+        self.table_view.heading('3', text = 'Created')
+        self.table_view.heading('4', text = 'Shifts')
     
     def build_date_select(self):
         format = '%Y/%m/%d'
@@ -102,13 +142,13 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.start_selection.set(self.date_range[-1])
         self.end_selection.set(self.date_range[0])
 
-        self.per_start_menu.grid(column = 2, row = 2, sticky = (W, E))
-        self.per_end_menu.grid(column = 3, row = 2, sticky = (W, E))
+        self.per_start_menu.grid(column = 3, row = 2, sticky = (W, E))
+        self.per_end_menu.grid(column = 4, row = 2, sticky = (W, E))
 
     def filter_data(self, event = None):
         # print("Filtering Data...")
         job_name = self.job_selection.get()
-        if job_name == self.choices[0]:
+        if job_name == self.job_choices[0]:
             job_name = None
         period_start = self.start_selection.get()
         period_start = self.seconds_range[self.date_range.index(period_start)]
@@ -117,40 +157,61 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         search_term = self.search_input.get()
         if search_term.strip() == '': search_term = None
         self.clear_table()
-        self.get_data(job_name = job_name, period_start = period_start, period_end = period_end, search_term = search_term)
+        self.get_rows(job_name = job_name, period_start = period_start, period_end = period_end, search_term = search_term)
         self.populate_table()
+
+    def get_rows(self, **kwargs):
+        # print("Getting Data:", **kwargs)
+        view_selection = self.view_selection.get()
+        if view_selection == self.view_choices[0]:
+            self.get_shifts(**kwargs)
+        elif view_selection == self.view_choices[1]:
+            self.get_tasks(**kwargs)
+        elif view_selection == self.view_choices[2]:
+            self.get_jobs()
+        if not "job_name" in kwargs or not kwargs["job_name"]:
+            job_name = 'All Jobs'
+        else:
+            job_name = kwargs["job_name"]
+        self.job_selection.set(job_name)
+        self.total_shifts = len(self.shifts)
+        self.total_hours = sum([i['hours'] for i in self.shifts])
+        self.total_hours = round(self.total_hours, 2)
+
+    def get_shifts(self, **kwargs):
+        self.shifts = self.db.report_shifts(**kwargs)
+        self.table_items = []
+        for shift in self.shifts:
+            if len(shift['notes']) < 20:
+                notes = shift['notes']
+            else:
+                notes = shift['notes'][:20].split('\n')[0]
+            start = shift['str_start'].split()
+            self.table_items.append((shift["id"], (shift['job'], start[0], start[1], shift['hours'], notes)))
+    
+    def get_tasks(self, **kwargs):
+        tasks = self.db.report_tasks(**kwargs)
+        self.table_items = [(i["id"], (i["job_name"], i["time_created"].split()[0], i["time_created"].split()[1], i["title"])) for i in tasks]
+
+    def get_jobs(self):
+        jobs = self.db.report_jobs(return_dict = True)
+        self.table_items = []
+        for job in jobs:
+            total_shifts = len(self.db.report_shifts(job_name = job["name"]))
+            self.table_items.append((job["id"], (job["name"], job["created"].split()[0], job["created"].split()[1], total_shifts)))
+
+    def populate_table(self):
+        self.totals_label['text'] = f'Hours: {self.total_hours}\tShifts: {self.total_shifts}'
+        for item in self.table_items:
+            tid = self.table_view.insert('', 'end', values = item[1])
+            self.tid_lookup[tid] = item[0]
     
     def clear_table(self):
         # print("Clearing Table...")
         for tid in self.tid_lookup:
             self.table_view.delete(tid)
         self.tid_lookup = {}
-        # self.table_view.clear_rows()
 
-    def get_data(self, job_name = None, period_start = None, period_end = None, search_term = None):
-        print("Getting Data:", job_name, period_start, period_end)
-        self.shifts = self.db.report_shifts(job_name = job_name, period_start = period_start, period_end = period_end, search_term = search_term)
-        if not job_name:
-            job_name = 'All Jobs'
-        self.job_selection.set(job_name)
-        self.total_shifts = len(self.shifts)
-        self.total_hours = sum([i['hours'] for i in self.shifts])
-        self.total_hours = round(self.total_hours, 2)
-    
-    def populate_table(self):
-        # print("Populating Items:", len(self.shifts))
-        self.totals_label['text'] = f'Hours: {self.total_hours}\tShifts: {self.total_shifts}'
-        for shift in self.shifts[::-1]:
-            if len(shift['notes']) < 20:
-                notes = shift['notes']
-            else:
-                notes = shift['notes'][:20].split('\n')[0]
-            start = shift['str_start'].split()
-            values = (shift['job'], start[0], start[1], shift['hours'], notes)
-            tid = self.table_view.insert('', 'end', values = values)
-            # tid = self.table_view.insert_row(*values)
-            self.tid_lookup[tid] = shift
-    
     def view_job_editor(self):
         job_editor = EditJobs(self)
         job_editor.root.mainloop()
@@ -168,7 +229,8 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
     def view_shift(self, event = None):
         try: tid = self.table_view.focus()
         except: return
-        shift = self.tid_lookup[tid]
+        shift_id = self.tid_lookup[tid]
+        shift = self.db.report_shifts(shift_id = shift_id)
         shift_view = ViewEditShift(self, shift)
         shift_view.root.mainloop()
 

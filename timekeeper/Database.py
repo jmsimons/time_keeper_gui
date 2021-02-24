@@ -151,14 +151,6 @@ class DB: ### Wrapper class for database functionality ###
         with self.session() as s:
             s.add(job)
     
-    def get_jobs(self, return_dict = False):
-        with self.session() as s:
-            if return_dict:
-                jobs = [i.get_dict() for i in s.query(Job).all()]
-            else:
-                jobs = [i.name for i in s.query(Job).all()]
-        return jobs
-    
     def add_shift(self, job_name, start_time, end_time, break_time, notes):
         shift = Shift(job_name, start_time, end_time, break_time, notes)
         # print(shift, job_name, start_time, end_time, break_time, notes)
@@ -182,6 +174,14 @@ class DB: ### Wrapper class for database functionality ###
                 shift.complete = True
         return len(incomplete)
 
+    def report_jobs(self, return_dict = False): 
+        with self.session() as s:
+            if return_dict:
+                jobs = [i.get_dict() for i in s.query(Job).all()]
+            else:
+                jobs = [i.name for i in s.query(Job).all()]
+        return jobs
+
     def report_shifts(self, shift_id = None, job_name = None, period_start = None, period_end = None, search_term = None):
         # print('Filtering by job:', job_name, 'per_start:', period_start, 'per_end:', period_end, 'search_term:', search_term)
         with self.session() as s:
@@ -203,6 +203,7 @@ class DB: ### Wrapper class for database functionality ###
         return shifts
     
     def report_tasks(self, shift_id = None, job_name = None, period_start = None, period_end = None, search_term = None):
+        print(f"Reporting Tasks: shift_id = {shift_id}, job_name = {job_name}, period_start = {period_start}, period_end = {period_end}, search_term = {search_term}")
         with self.session() as s:
             query = s.query(Task)
             if shift_id:
