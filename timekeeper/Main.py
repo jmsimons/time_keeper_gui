@@ -1,4 +1,4 @@
-from tkinter import ttk, Tk, StringVar, Listbox, MULTIPLE, SINGLE, END, N, S, E, W, DISABLED
+from tkinter import ttk, Tk, StringVar, Listbox, MULTIPLE, SINGLE, END, N, S, E, W, DISABLED, TclError
 from tkinter.scrolledtext import ScrolledText
 from timekeeper.ReportEdit import ReportEditApp
 from timekeeper.Popups import PopConfirm
@@ -117,7 +117,7 @@ class ShiftApp(): ### In-progress Shift application ###
         self.pause_button = ttk.Button(self.button_frame, text = 'Pause', command = self.toggle_break, width = 7)
         # TODO: Add info button
         self.cancel_button = ttk.Button(self.frame, text = 'Cancel', command = self.cancel_prompt)
-        self.notes = ScrolledText(self.frame, width = 60, height = 15, relief = 'sunken')
+        self.notes = ScrolledText(self.frame, undo = True, width = 60, height = 15, relief = 'sunken')
         self.report_job_button = ttk.Button(self.frame, text = 'Prior Shifts', command = self.launch_report_edit)
         self.save_button = ttk.Button(self.frame, text = 'Stop and Save', command = self.end_prompt)
 
@@ -143,10 +143,17 @@ class ShiftApp(): ### In-progress Shift application ###
         self.task_entry.bind("<KeyRelease>", self.filter_tasks)
         self.task_list.bind("<ButtonRelease-1>", self.focus_task)
         self.task_list.bind("<Double-Button-1>", self.copy_task_title)
+        self.notes.bind("<Command-Z>", self.edit_undo)
 
         self.time_counter()
         self.auto_save()
         self.get_tasks()
+    
+    def edit_undo(self, event = None):
+        try:
+            self.notes.edit_undo()
+        except TclError as e:
+            print(e)
 
     def get_tasks(self, event = None, **kwargs): ## Gets set of filtered tasks from db ##
         if "Job" in self.tm1_selection.get():
@@ -167,9 +174,12 @@ class ShiftApp(): ### In-progress Shift application ###
             self.task_index.append(task["id"])
     
     def filter_tasks(self, event = None):
+        # TODO: set focus to 'Shift Notes'
         search_term = self.task_entry.get()
+        if search_term in ('', ' '):
+            search_term = None
         self.get_tasks(search_term = search_term)
-        notes = self.db.report_shifts(shift_id = self.id)[0]["notes"]
+        notes = self.db.get_shift(self.id)["notes"]
         self.notes.delete("0.0", END)
         self.notes.insert(END, notes)
     
@@ -221,7 +231,7 @@ class ShiftApp(): ### In-progress Shift application ###
     
     def auto_save(self):
         self.save_update()
-        self.events['auto_save'] = self.root.after(1000, self.auto_save)
+        self.events['auto_save'] = self.root.after(5000, self.auto_save)
     
     def save_update(self): ## Commits current state for shift and tasks to db ##
         if self.break_start:

@@ -14,12 +14,14 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
 
         self.root = Tk()
         self.root.title('Report and Edit')
+        # self.root.geometry("600x400")
         self.root.resizable(False, False)
 
         self.container = ttk.Frame(self.root)
         self.frame = ttk.Frame(self.container)
+        self.grid_configure()
         
-        filter_label = ttk.Label(self.frame, text = 'Filter:')
+        filter_label = ttk.Label(self.frame, text = "Filter:")
         self.view_selection = StringVar(self.root)
         self.job_selection = StringVar(self.root)
         self.start_selection = StringVar(self.root)
@@ -36,9 +38,11 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.edit_jobs_button = ttk.Button(self.frame, text = 'Edit Jobs', command = self.view_job_editor)
         export_options = ('Text', 'PDF')
         self.export_menu = ttk.OptionMenu(self.frame, self.export_selection, 'Export', *export_options)
-        self.view_shift_button = ttk.Button(self.frame, text = 'View/Edit Shift', command = self.view_shift)
+        self.view_shift_button = ttk.Button(self.frame, text = 'View/Edit Shift', command = self.view_item)
 
         filter_label.grid(column = 1, row = 1, sticky = W, pady = 5)
+        self.view_menu.grid(column = 2, row = 1, sticky = E)
+        self.job_menu.grid(column = 1, columnspan = 2, row = 2, sticky = (W, E))
         self.search_input.grid(column = 5, row = 2, sticky = (W, E))
         self.totals_label.grid(column = 1, columnspan = 5, row = 4, sticky = W, pady = 5)
         self.table_frame.grid(column = 1, columnspan = 5, row = 5, sticky = (N, S, E, W))
@@ -55,8 +59,18 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.per_end_menu.bind("<ButtonRelease-1>", self.filter_data)
         self.search_input.bind('<KeyRelease>', self.filter_data)
         self.search_input.bind("<Return>", self.filter_data)
-        self.table_view.bind("<Double-Button-1>", self.view_shift)
         self.export_menu.bind("<ButtonRelease-1>", self.export)
+    
+    def grid_configure(self):
+        # TODO: this isn't working, trying to figure out why. The goal is to set fixed column-widths so that the ui doesn't redraw when a widget changes size.
+        self.root.columnconfigure(0, weight = 0)
+        self.container.columnconfigure(0, weight = 0)
+        self.frame.columnconfigure(0, weight = 0)
+        self.frame.columnconfigure(1, weight = 1)
+        self.frame.columnconfigure(2, weight = 2)
+        self.frame.columnconfigure(3, weight = 2)
+        self.frame.columnconfigure(4, weight = 2)
+        self.frame.columnconfigure(5, weight = 2)
 
     def build_menus(self):
         self.job_choices = ['All Jobs'] + self.db.report_jobs()
@@ -67,8 +81,6 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.view_menu = ttk.OptionMenu(self.frame, self.view_selection, self.view_choices[0], *self.view_choices)
         self.job_menu.config(width = 5)
 
-        self.view_menu.grid(column = 2, row = 1, sticky = E)
-        self.job_menu.grid(column = 1, columnspan = 2, row = 2, sticky = (W, E))
     
     def build_table(self, event = None, **kwargs):
         self.table_view = ttk.Treeview(self.table_frame, selectmode = 'browse')
@@ -91,6 +103,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.tid_lookup = {}
         self.get_rows(**kwargs)
         self.populate_table()
+        self.table_view.bind("<Double-Button-1>", self.view_item)
 
     def shifts_table(self):
         self.table_view['columns'] = ('1', '2', '3', '4', '5')
@@ -161,7 +174,6 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.populate_table()
 
     def get_rows(self, **kwargs):
-        # print("Getting Data:", **kwargs)
         view_selection = self.view_selection.get()
         if view_selection == self.view_choices[0]:
             self.get_shifts(**kwargs)
@@ -202,7 +214,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
 
     def populate_table(self):
         self.totals_label['text'] = f'Hours: {self.total_hours}\tShifts: {self.total_shifts}'
-        for item in self.table_items:
+        for item in self.table_items[::-1]:
             tid = self.table_view.insert('', 'end', values = item[1])
             self.tid_lookup[tid] = item[0]
     
@@ -223,72 +235,31 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         period_start = self.start_selection.get()
         period_end = self.end_selection.get()
         search_term = self.search_input.get()
-        if search_term == '': search_term = None
-        Export(doc_type, job_selection, period_start, period_end, search_term, self.total_hours, self.shifts)
+        if search_term in ('', ' '): search_term = None
+        export_shifts = [i for i in self.shifts]
+        for shift in export_shifts:
+            shift["tasks"] = self.db.report_tasks(shift_id = shift["id"])
+        Export(doc_type, job_selection, period_start, period_end, search_term, self.total_hours, export_shifts)
 
-    def view_shift(self, event = None):
+    def view_item(self, event = None):
         try: tid = self.table_view.focus()
-        except: return
-        shift_id = self.tid_lookup[tid]
-        shift = self.db.get_shift(shift_id)
-        shift_view = ViewEditShift(self, shift)
-        shift_view.root.mainloop()
+        except:
+            print("focus error")
+            return
+        item_id = self.tid_lookup[tid]
+        item = self.db.get_shift(item_id)
+        item_type = self.view_selection.get().lower().rstrip('s')
+        print("Viewing", item_type, item_id)
+        item_view = ViewEditPane(self, item_type, item)
+        item_view.root.mainloop()
 
 
-class EditJobs(): # TODO: Remove
+class ViewEditPane():
 
-    def __init__(self, ReportEdit):
+    def __init__(self, ReportEdit, item_type, item_dict):
         self.report_edit = ReportEdit
-        
-        self.root = Tk()
-        self.root.title("Edit Jobs")
-        self.root.resizable(False, False)
-
-        self.container = ttk.Frame(self.root)
-        self.frame = ttk.Frame(self.container)
-        self.job_selection = StringVar(self.root)
-
-        self.table_view = ttk.Treeview(self.frame, selectmode = 'browse')
-        self.table_view['columns'] = ('1', '2')
-        self.table_view['show'] = 'headings'
-        self.table_view.column('1', width = 100, anchor = 'w')
-        self.table_view.column('2', width = 140, anchor = 'w')
-        self.table_view.heading('1', text = 'Name')
-        self.table_view.heading('2', text = 'Created')
-        self.populate_table()
-
-        self.edit_button = ttk.Button(self.frame, text = 'Edit Name', command = self.edit_name)
-
-        self.table_view.grid(column = 1, columnspan = 2, row = 1, pady = (0, 5))
-        self.edit_button.grid(column = 1, row = 2, sticky = W)
-
-        self.frame.grid(column = 0, row = 0, padx = 5, pady = 5)
-        self.container.grid(column = 0, row = 0)
-    
-    def populate_table(self):
-        jobs = self.report_edit.db.get_jobs(return_dict = True)
-        self.tid_lookup = {}
-        for job in jobs:
-            values = (job['name'], job['created'])
-            tid = self.table_view.insert('', 'end', values = values)
-            self.tid_lookup[tid] = job
-    
-    def edit_name(self):
-        try: tid = self.table_view.focus()
-        except: return
-        job = self.tid_lookup[tid]
-        entry = EntryBox(self.save_name, 'name', job['name'])
-        entry.root.mainloop()
-    
-    def save_name(self, cur_name, new_name):
-        self.report_edit.db.update_job_name()
-
-
-class ViewEditShift():
-
-    def __init__(self, ReportEdit, shift_dict):
-        self.report_edit = ReportEdit
-        self.shift = shift_dict
+        self.item_type = item_type
+        self.item = item_dict
 
         self.root = Tk()
         self.root.title("Shift Record")
@@ -300,25 +271,13 @@ class ViewEditShift():
         self.container = ttk.Frame(self.root)
         self.frame = ttk.Frame(self.container)
 
-        self.job_label = ttk.Label(self.frame)
-        self.start_label = ttk.Label(self.frame)
-        self.end_label = ttk.Label(self.frame)
-        self.break_label = ttk.Label(self.frame)
-        self.hours_label = ttk.Label(self.frame)
-        self.notes = ScrolledText(self.frame, width = 60, height = 15, relief = 'sunken')
+        if self.item_type == "shift": self.load_shift()
+        elif self.item_type == "task": self.load_task()
+        elif self.item_type == "job": self.load_job()
         self.edit_frame = ttk.Frame(self.frame)
-        edit_options = ('Job', 'Start', 'End', 'Break', 'Notes')
-        self.edit_menu = ttk.OptionMenu(self.edit_frame, self.edit_selection, 'Edit', *edit_options)
         self.delete_button = ttk.Button(self.edit_frame, text = 'Delete Shift', command = self.delete_prompt)
         self.done_button = ttk.Button(self.frame, text = 'Done', command = self.root.destroy)
-        self.load_view()
-
-        self.job_label.grid(column = 1, row = 1, sticky = W, ipadx = 2)
-        self.start_label.grid(column = 1, row = 2, sticky = W, ipadx = 5, pady = 2)
-        self.end_label.grid(column = 1, row = 3, sticky = W, ipadx = 5, ipady = 0)
-        self.break_label.grid(column = 2, row = 2, sticky = W, ipadx = 5, ipady = 0)
-        self.hours_label.grid(column = 2, row = 3, sticky = W, ipadx = 5, ipady = 0)
-        self.notes.grid(column = 1, columnspan = 2, row = 4, sticky = (N, S, E, W), pady = 5)
+        self.edit_menu = ttk.OptionMenu(self.edit_frame, self.edit_selection, 'Edit', *self.edit_options)
         self.edit_menu.grid(column = 1, row = 1, sticky = W)
         self.delete_button.grid(column = 2, row = 1, sticky = E)
         self.edit_frame.grid(column = 1, row = 5, sticky = W)
@@ -327,31 +286,67 @@ class ViewEditShift():
         self.container.grid()
 
         self.root.bind("<Command-c>", self.copy_notes)
-        self.edit_menu.bind("<ButtonRelease-1>", self.edit_shift)
+        self.edit_menu.bind("<ButtonRelease-1>", self.edit_item)
 
-    def load_view(self):
-        self.job_label['text'] = f"Job:\t{self.shift['job']}"
-        self.start_label['text'] = f"Start:\t{self.shift['str_start']}"
-        self.end_label['text'] = f"End:\t{self.shift['str_end']}"
-        self.break_label['text'] = f"Break:\t{self.shift['break']} (minutes)"
-        self.hours_label['text'] = f"Hours:\t{self.shift['hours']}"
+    def load_shift(self): ## Load Shift view elements ##
+        self.job_label = ttk.Label(self.frame)
+        self.start_label = ttk.Label(self.frame)
+        self.end_label = ttk.Label(self.frame)
+        self.break_label = ttk.Label(self.frame)
+        self.hours_label = ttk.Label(self.frame)
+        self.notes = ScrolledText(self.frame, width = 60, height = 15, relief = 'sunken')
+
+        self.job_label.grid(column = 1, row = 1, sticky = W, ipadx = 2)
+        self.start_label.grid(column = 1, row = 2, sticky = W, ipadx = 5, pady = 2)
+        self.end_label.grid(column = 1, row = 3, sticky = W, ipadx = 5, ipady = 0)
+        self.break_label.grid(column = 2, row = 2, sticky = W, ipadx = 5, ipady = 0)
+        self.hours_label.grid(column = 2, row = 3, sticky = W, ipadx = 5, ipady = 0)
+        self.notes.grid(column = 1, columnspan = 2, row = 4, sticky = (N, S, E, W), pady = 5)
+
+        self.edit_options = ('Job', 'Start', 'End', 'Break', 'Notes')
+        self.job_label['text'] = f"Job:\t{self.item['job']}"
+        self.start_label['text'] = f"Start:\t{self.item['str_start']}"
+        self.end_label['text'] = f"End:\t{self.item['str_end']}"
+        self.break_label['text'] = f"Break:\t{self.item['break']} (minutes)"
+        self.hours_label['text'] = f"Hours:\t{self.item['hours']}"
         self.notes.config(state = NORMAL)
         self.notes.delete('1.0', END)
-        self.notes.insert(END, self.shift['notes'])
+        self.notes.insert(END, self.item['notes'])
         self.notes.config(state = DISABLED)
+    
+    def load_task(self): ## Loas Task view elements ##
+        self.notes = ScrolledText(self.frame, width = 60, height = 15, relief = 'sunken')
 
-    def edit_shift(self, event):
+        self.notes.grid(column = 1, columnspan = 2, row = 4, sticky = (N, S, E, W), pady = 5)
+        self.edit_options = ("Title", "Notes")
+        pass
+
+    def load_job(self): ## Load Job view elements ##
+        self.edit_options = ("Name")
+        pass
+
+    def edit_item(self, event):
         key = self.edit_selection.get().lower()
         if key == 'edit': return
-        elif key in ('start', 'end'):
-            key = 'str_' + key
         self.edit_selection.set('Edit')
-        entry = EntryBox(self.save_property, key, self.shift[key])
+        if self.item_type == "shift":
+            if key in ('start', 'end'):
+                key = 'str_' + key
+        elif self.item_type == "task": pass
+        elif self.item_type == "job": pass
+        entry = EntryBox(self.save_property, key, self.item[key])
         entry.root.mainloop()
     
     def save_property(self, key, value):
-        self.shift = self.report_edit.db.update_shift_field(self.shift['id'], key, value)
-        self.load_view()
+        if self.item_type == "shift":
+            self.item = self.report_edit.db.update_shift_field(self.item['id'], key, value)
+            self.load_shift()
+        elif self.item_type == "task":
+            self.item = self.report_edit.db.update_task_field(self.item['id'], key, value)
+            self.load_task()
+        elif self.item_type == "job":
+            self.item = self.report_edit.db.update_job_field(self.item['id'], key, value)
+            self.load_job()
         self.report_edit.filter_data()
     
     def copy_notes(self, event = None):
@@ -363,7 +358,7 @@ class ViewEditShift():
         popup.root.mainloop()
     
     def delete_shift(self):
-        self.report_edit.db.remove_shift(self.shift['id'])
+        self.report_edit.db.remove_shift(self.item['id'])
         self.root.destroy()
         self.report_edit.filter_data()
 

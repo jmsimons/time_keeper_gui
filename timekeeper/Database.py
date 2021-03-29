@@ -17,6 +17,11 @@ class Job(Base): # Job table definition #
         self.name = job_name
         self.date_created = time.time()
     
+    def update(self, column, value):
+        if column == 'name':
+            self.name = value
+        return True
+    
     def get_dict(self):
         format = '%Y/%m/%d %H:%M:%S'
         created = time.strftime(format, time.localtime(self.date_created))
@@ -260,6 +265,22 @@ class DB: ### Wrapper class for database functionality ###
             shift.update(column, value)
             shift_dict = shift.get_dict()
         return shift_dict
+    
+    def update_task_field(self, id, column, value):
+        with self.session() as s:
+            # print('Searching for', id)
+            task = s.query(Task).filter_by(id = id).first()
+            task.update(column, value)
+            task_dict = task.get_dict()
+        return task_dict
+
+    def update_job_field(self, id, column, value):
+        with self.session() as s:
+            # print('Searching for', id)
+            job = s.query(Job).filter_by(id = id).first()
+            job.update(column, value)
+            job_dict = job.get_dict()
+        return job_dict
     
     def remove_job(self, job_name):
         pass
