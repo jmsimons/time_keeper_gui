@@ -88,9 +88,8 @@ class EntryBox: ### Popup used by EditJobs and ViewEditShift to change a recorde
         self.container = ttk.Frame(self.root)
         self.frame = ttk.Frame(self.container)
 
-        if key == 'job': self.job_entry()
-        elif 'start' in key or 'end' in key:
-            self.time_entry()
+        if key in ("job", "name", "title"): self.string_entry()
+        elif 'start' in key or 'end' in key: self.time_entry()
         elif key == 'break': self.break_entry()
         elif key == 'notes': self.notes_entry()
 
@@ -137,7 +136,7 @@ class EntryBox: ### Popup used by EditJobs and ViewEditShift to change a recorde
         self.save_func(self.key, value)
         self.root.destroy()
     
-    def job_entry(self):
+    def string_entry(self):
         self.entry = ttk.Entry(self.frame)
     
     def time_entry(self):

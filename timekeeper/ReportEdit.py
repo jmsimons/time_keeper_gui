@@ -35,7 +35,6 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.build_table(**kwargs)
         self.build_date_select()
 
-        self.edit_jobs_button = ttk.Button(self.frame, text = 'Edit Jobs', command = self.view_job_editor)
         export_options = ('Text', 'PDF')
         self.export_menu = ttk.OptionMenu(self.frame, self.export_selection, 'Export', *export_options)
         self.view_shift_button = ttk.Button(self.frame, text = 'View/Edit Shift', command = self.view_item)
@@ -47,7 +46,6 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.totals_label.grid(column = 1, columnspan = 5, row = 4, sticky = W, pady = 5)
         self.table_frame.grid(column = 1, columnspan = 5, row = 5, sticky = (N, S, E, W))
         self.export_menu.grid(column = 1, columnspan = 2, row = 6, sticky = W)
-        self.edit_jobs_button.grid(column = 4, row = 6, sticky = E)
         self.view_shift_button.grid(column = 5, row = 6, sticky = E, pady = 5)
 
         self.frame.grid(column = 0, row = 0, padx = 5, sticky = (N, S, E, W))
@@ -80,7 +78,6 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.view_choices = ("Shifts", "Tasks", "Jobs")
         self.view_menu = ttk.OptionMenu(self.frame, self.view_selection, self.view_choices[0], *self.view_choices)
         self.job_menu.config(width = 5)
-
     
     def build_table(self, event = None, **kwargs):
         self.table_view = ttk.Treeview(self.table_frame, selectmode = 'browse')
@@ -224,10 +221,6 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
             self.table_view.delete(tid)
         self.tid_lookup = {}
 
-    def view_job_editor(self):
-        job_editor = EditJobs(self)
-        job_editor.root.mainloop()
-
     def export(self, event = None):
         doc_type = self.export_selection.get()
         self.export_selection.set('Export')
@@ -243,12 +236,15 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
 
     def view_item(self, event = None):
         try: tid = self.table_view.focus()
-        except:
-            print("focus error")
-            return
-        item_id = self.tid_lookup[tid]
-        item = self.db.get_shift(item_id)
+        except: return
         item_type = self.view_selection.get().lower().rstrip('s')
+        item_id = self.tid_lookup[tid]
+        if item_type == "shift":
+            item = self.db.get_shift(item_id)
+        elif item_type == "task":
+            item = self.db.get_task(item_id)
+        elif item_type == "job":
+            item = self.db.get_job(item_id)
         print("Viewing", item_type, item_id)
         item_view = ViewEditPane(self, item_type, item)
         item_view.root.mainloop()
@@ -260,9 +256,9 @@ class ViewEditPane():
         self.report_edit = ReportEdit
         self.item_type = item_type
         self.item = item_dict
-
         self.root = Tk()
-        self.root.title("Shift Record")
+        title = f"{item_type.capitalize()} Record"
+        self.root.title(title)
         self.root.resizable(False, False)
         # self.root.overrideredirect(True)
 
@@ -270,18 +266,18 @@ class ViewEditPane():
 
         self.container = ttk.Frame(self.root)
         self.frame = ttk.Frame(self.container)
+        self.edit_frame = ttk.Frame(self.frame)
 
         if self.item_type == "shift": self.load_shift()
         elif self.item_type == "task": self.load_task()
         elif self.item_type == "job": self.load_job()
-        self.edit_frame = ttk.Frame(self.frame)
         self.delete_button = ttk.Button(self.edit_frame, text = 'Delete Shift', command = self.delete_prompt)
         self.done_button = ttk.Button(self.frame, text = 'Done', command = self.root.destroy)
         self.edit_menu = ttk.OptionMenu(self.edit_frame, self.edit_selection, 'Edit', *self.edit_options)
         self.edit_menu.grid(column = 1, row = 1, sticky = W)
         self.delete_button.grid(column = 2, row = 1, sticky = E)
-        self.edit_frame.grid(column = 1, row = 5, sticky = W)
         self.done_button.grid(column = 2, row = 5, sticky = E)
+        self.edit_frame.grid(column = 1, row = 5, sticky = W)
         self.frame.grid(column = 0, row = 0, padx = 5, pady = 5)
         self.container.grid()
 
@@ -319,11 +315,13 @@ class ViewEditPane():
 
         self.notes.grid(column = 1, columnspan = 2, row = 4, sticky = (N, S, E, W), pady = 5)
         self.edit_options = ("Title", "Notes")
-        pass
+        self.notes.config(state = NORMAL)
+        self.notes.delete('1.0', END)
+        self.notes.insert(END, self.item['notes'])
+        self.notes.config(state = DISABLED)
 
     def load_job(self): ## Load Job view elements ##
         self.edit_options = ("Name")
-        pass
 
     def edit_item(self, event):
         key = self.edit_selection.get().lower()
@@ -334,6 +332,7 @@ class ViewEditPane():
                 key = 'str_' + key
         elif self.item_type == "task": pass
         elif self.item_type == "job": pass
+        print(self.item)
         entry = EntryBox(self.save_property, key, self.item[key])
         entry.root.mainloop()
     

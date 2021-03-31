@@ -212,6 +212,11 @@ class DB: ### Wrapper class for database functionality ###
             shifts = [i.get_dict() for i in query.all()]
         return shifts
     
+    def get_task(self, task_id):
+        with self.session() as s:
+            task = s.query(Task).filter(Task.id == task_id).first()
+            return task.get_dict()
+    
     def report_tasks(self, shift_id = None, job_name = None, period_start = None, period_end = None, search_term = None):
         print(f"Reporting Tasks: shift_id = {shift_id}, job_name = {job_name}, period_start = {period_start}, period_end = {period_end}, search_term = {search_term}")
         with self.session() as s:
