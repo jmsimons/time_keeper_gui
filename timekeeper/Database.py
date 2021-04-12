@@ -158,7 +158,6 @@ class DB: ### Wrapper class for database functionality ###
     
     def add_shift(self, job_name, start_time, end_time, break_time, notes):
         shift = Shift(job_name, start_time, end_time, break_time, notes)
-        # print(shift, job_name, start_time, end_time, break_time, notes)
         with self.session() as s:
             s.add(shift)
             s.commit()
@@ -193,7 +192,6 @@ class DB: ### Wrapper class for database functionality ###
             return shift.get_dict()
 
     def report_shifts(self, shift_id = None, job_name = None, period_start = None, period_end = None, search_term = None):
-        # print('Filtering by job:', job_name, 'per_start:', period_start, 'per_end:', period_end, 'search_term:', search_term)
         with self.session() as s:
             query = s.query(Shift)
             if shift_id:
@@ -237,6 +235,11 @@ class DB: ### Wrapper class for database functionality ###
             else:
                 tasks = [i.get_dict() for i in query.all()]
         return tasks
+    
+    def get_job(self, job_id):
+        with self.session() as s:
+            job = s.query(Job).filter(Job.id == job_id).first()
+            return job.get_dict()
     
     def update_job_name(self, cur_name, new_name):
         with self.session() as s:

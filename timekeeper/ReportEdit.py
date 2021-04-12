@@ -156,7 +156,6 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.per_end_menu.grid(column = 4, row = 2, sticky = (W, E))
 
     def filter_data(self, event = None):
-        # print("Filtering Data...")
         job_name = self.job_selection.get()
         if job_name == self.job_choices[0]:
             job_name = None
@@ -207,6 +206,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.table_items = []
         for job in jobs:
             total_shifts = len(self.db.report_shifts(job_name = job["name"]))
+            # TODO: add total_hours
             self.table_items.append((job["id"], (job["name"], job["created"].split()[0], job["created"].split()[1], total_shifts)))
 
     def populate_table(self):
@@ -216,7 +216,6 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
             self.tid_lookup[tid] = item[0]
     
     def clear_table(self):
-        # print("Clearing Table...")
         for tid in self.tid_lookup:
             self.table_view.delete(tid)
         self.tid_lookup = {}
@@ -244,8 +243,8 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         elif item_type == "task":
             item = self.db.get_task(item_id)
         elif item_type == "job":
+            return
             item = self.db.get_job(item_id)
-        print("Viewing", item_type, item_id)
         item_view = ViewEditPane(self, item_type, item)
         item_view.root.mainloop()
 
@@ -271,7 +270,8 @@ class ViewEditPane():
         if self.item_type == "shift": self.load_shift()
         elif self.item_type == "task": self.load_task()
         elif self.item_type == "job": self.load_job()
-        self.delete_button = ttk.Button(self.edit_frame, text = 'Delete Shift', command = self.delete_prompt)
+        delete_button_text = f"Delete {item_type.capitalize()}"
+        self.delete_button = ttk.Button(self.edit_frame, text = delete_button_text, command = self.delete_prompt)
         self.done_button = ttk.Button(self.frame, text = 'Done', command = self.root.destroy)
         self.edit_menu = ttk.OptionMenu(self.edit_frame, self.edit_selection, 'Edit', *self.edit_options)
         self.edit_menu.grid(column = 1, row = 1, sticky = W)
@@ -321,7 +321,7 @@ class ViewEditPane():
         self.notes.config(state = DISABLED)
 
     def load_job(self): ## Load Job view elements ##
-        self.edit_options = ("Name")
+        self.edit_options = ("Name", )
 
     def edit_item(self, event):
         key = self.edit_selection.get().lower()
@@ -332,7 +332,6 @@ class ViewEditPane():
                 key = 'str_' + key
         elif self.item_type == "task": pass
         elif self.item_type == "job": pass
-        print(self.item)
         entry = EntryBox(self.save_property, key, self.item[key])
         entry.root.mainloop()
     
@@ -360,18 +359,3 @@ class ViewEditPane():
         self.report_edit.db.remove_shift(self.item['id'])
         self.root.destroy()
         self.report_edit.filter_data()
-
-
-class ViewEditJob: # View-pane for Job
-
-    def __init__(self):
-        pass
-
-    def edit_job(self):
-        pass
-
-    def delete_prompt(self):
-        pass
-
-    def delete_job(self):
-        pass
