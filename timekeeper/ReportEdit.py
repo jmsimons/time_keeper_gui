@@ -243,8 +243,8 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         elif item_type == "task":
             item = self.db.get_task(item_id)
         elif item_type == "job":
-            return
-            item = self.db.get_job(item_id)
+            # return
+            item = self.db.get_job_details(item_id)
         item_view = ViewEditPane(self, item_type, item)
         item_view.root.mainloop()
 
@@ -270,10 +270,13 @@ class ViewEditPane():
         if self.item_type == "shift": self.load_shift()
         elif self.item_type == "task": self.load_task()
         elif self.item_type == "job": self.load_job()
+        self.notes = ScrolledText(self.frame, width = 60, height = 15, relief = 'sunken')
         delete_button_text = f"Delete {item_type.capitalize()}"
         self.delete_button = ttk.Button(self.edit_frame, text = delete_button_text, command = self.delete_prompt)
         self.done_button = ttk.Button(self.frame, text = 'Done', command = self.root.destroy)
         self.edit_menu = ttk.OptionMenu(self.edit_frame, self.edit_selection, 'Edit', *self.edit_options)
+        
+        self.notes.grid(column = 1, columnspan = 2, row = 4, sticky = (N, S, E, W), pady = 5)
         self.edit_menu.grid(column = 1, row = 1, sticky = W)
         self.delete_button.grid(column = 2, row = 1, sticky = E)
         self.done_button.grid(column = 2, row = 5, sticky = E)
@@ -281,47 +284,56 @@ class ViewEditPane():
         self.frame.grid(column = 0, row = 0, padx = 5, pady = 5)
         self.container.grid()
 
+        self.notes.config(state = NORMAL)
+        self.notes.delete('1.0', END)
+        self.notes.insert(END, self.item['notes'])
+        self.notes.config(state = DISABLED)
+
         self.root.bind("<Command-c>", self.copy_notes)
         self.edit_menu.bind("<ButtonRelease-1>", self.edit_item)
 
     def load_shift(self): ## Load Shift view elements ##
-        self.job_label = ttk.Label(self.frame)
-        self.start_label = ttk.Label(self.frame)
-        self.end_label = ttk.Label(self.frame)
-        self.break_label = ttk.Label(self.frame)
-        self.hours_label = ttk.Label(self.frame)
-        self.notes = ScrolledText(self.frame, width = 60, height = 15, relief = 'sunken')
+        self.job_label = ttk.Label(self.frame, text = f"Job:\t{self.item['job']}")
+        self.start_label = ttk.Label(self.frame, text = f"Start:\t{self.item['str_start']}")
+        self.end_label = ttk.Label(self.frame, text = f"End:\t{self.item['str_end']}")
+        self.break_label = ttk.Label(self.frame, text = f"Break:\t{self.item['break']} (minutes)")
+        self.hours_label = ttk.Label(self.frame, text = f"Hours:\t{self.item['hours']}")
 
         self.job_label.grid(column = 1, row = 1, sticky = W, ipadx = 2)
         self.start_label.grid(column = 1, row = 2, sticky = W, ipadx = 5, pady = 2)
         self.end_label.grid(column = 1, row = 3, sticky = W, ipadx = 5, ipady = 0)
         self.break_label.grid(column = 2, row = 2, sticky = W, ipadx = 5, ipady = 0)
         self.hours_label.grid(column = 2, row = 3, sticky = W, ipadx = 5, ipady = 0)
-        self.notes.grid(column = 1, columnspan = 2, row = 4, sticky = (N, S, E, W), pady = 5)
 
         self.edit_options = ('Job', 'Start', 'End', 'Break', 'Notes')
-        self.job_label['text'] = f"Job:\t{self.item['job']}"
-        self.start_label['text'] = f"Start:\t{self.item['str_start']}"
-        self.end_label['text'] = f"End:\t{self.item['str_end']}"
-        self.break_label['text'] = f"Break:\t{self.item['break']} (minutes)"
-        self.hours_label['text'] = f"Hours:\t{self.item['hours']}"
-        self.notes.config(state = NORMAL)
-        self.notes.delete('1.0', END)
-        self.notes.insert(END, self.item['notes'])
-        self.notes.config(state = DISABLED)
     
-    def load_task(self): ## Loas Task view elements ##
-        self.notes = ScrolledText(self.frame, width = 60, height = 15, relief = 'sunken')
+    def load_task(self): ## Load Task view elements ##
+        completion_status = "Complete" if self.item["complete"] else "Incomplete"
+        self.job_label = ttk.Label(self.frame, text = f"Job:\t{self.item['job_name']}")
+        self.time_created_label = ttk.Label(self.frame, text = f"Created:\t{self.item['time_created']}")
+        self.completion_status_label = ttk.Label(self.frame, text = f"Status:\t{completion_status}")
 
-        self.notes.grid(column = 1, columnspan = 2, row = 4, sticky = (N, S, E, W), pady = 5)
+        self.job_label.grid(column = 1, row = 1, sticky = W, ipadx = 2)
+        self.time_created_label.grid(column = 1, row = 2, sticky = W, ipadx = 2)
+        self.completion_status_label.grid(column = 2, row = 2, sticky = W, ipadx = 2)
+
         self.edit_options = ("Title", "Notes")
-        self.notes.config(state = NORMAL)
-        self.notes.delete('1.0', END)
-        self.notes.insert(END, self.item['notes'])
-        self.notes.config(state = DISABLED)
 
     def load_job(self): ## Load Job view elements ##
-        self.edit_options = ("Name", )
+        self.job_label = ttk.Label(self.frame, text = f"Name:\t{self.item['name']}")
+        self.time_created_label = ttk.Label(self.frame, text = f"Created:\t{self.item['created']}")
+        self.total_shifts_label = ttk.Label(self.frame, text = f"Shifts:\t{self.item['total_shifts']}")
+        self.total_hours_label = ttk.Label(self.frame, text = f"Total Hours:\t{self.item['total_hours']}")
+
+        self.export_button = ttk.Button(self.frame, text = 'Export Records', command = self.load_job)
+
+        self.job_label.grid(column = 1, row = 1, sticky = W, ipadx = 2)
+        self.time_created_label.grid(column = 1, row = 2, sticky = W, ipadx = 2)
+        self.total_shifts_label.grid(column = 1, row = 3, sticky = W, ipadx = 2)
+        self.total_hours_label.grid(column = 2, row = 3, sticky = W, ipadx = 2)
+        self.export_button.grid(column = 2, row = 1, sticky = E, ipadx = 2)
+
+        self.edit_options = ("Name", "Notes")
 
     def edit_item(self, event):
         key = self.edit_selection.get().lower()

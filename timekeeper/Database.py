@@ -73,13 +73,16 @@ class Shift(Base): # Shift table definition #
             self.notes = str(value)
         return True
     
+    def get_hours_worked(self):
+        if self.break_time == None: self.break_time = 0
+        if self.end_time == None: self.end_time = self.start_time
+        dur = self.end_time - self.start_time - self.break_time
+        return round(dur / 3600, 2)
+    
     def get_dict(self):
         format = '%Y/%m/%d %H:%M:%S'
         str_start = time.strftime(format, time.localtime(self.start_time))
         str_end = time.strftime(format, time.localtime(self.end_time))
-        if self.break_time == None: self.break_time = 0
-        if self.end_time == None: self.end_time = self.start_time
-        dur = self.end_time - self.start_time - self.break_time
         shift_dict = {'id': self.id,
                       'job': self.job_name,
                       'str_start': str_start,
@@ -87,7 +90,7 @@ class Shift(Base): # Shift table definition #
                       'start': self.start_time,
                       'end': self.end_time,
                       'break': round(self.break_time / 60, 1),
-                      'hours': round(dur / 3600, 2),
+                      'hours': self.get_hours_worked(),
                       'notes': self.notes if self.notes != None else ''}
         return shift_dict
 
@@ -240,6 +243,15 @@ class DB: ### Wrapper class for database functionality ###
         with self.session() as s:
             job = s.query(Job).filter(Job.id == job_id).first()
             return job.get_dict()
+    
+    def get_job_details(self, job_id):
+        with self.session() as s:
+            job = s.query(Job).filter(Job.id == job_id).first()
+            job_dict = job.get_dict()
+            shifts = s.query(Shift).filter_by(job_name = job.name).all()
+            job_dict["total_shifts"] = len(shifts)
+            job_dict["total_hours"] = round(sum(i.get_hours_worked() for i in shifts), 1)
+            return job_dict
     
     def update_job_name(self, cur_name, new_name):
         with self.session() as s:
