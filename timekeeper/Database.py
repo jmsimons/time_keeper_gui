@@ -20,6 +20,10 @@ class Job(Base): # Job table definition #
     def update(self, column, value):
         if column == 'name':
             self.name = value
+        elif column == 'notes':
+            self.notes = value
+        else:
+            return False
         return True
     
     def get_dict(self):
@@ -71,6 +75,8 @@ class Shift(Base): # Shift table definition #
             self.break_time = float(value) * 60
         elif column == 'notes':
             self.notes = str(value)
+        else:
+            return False
         return True
     
     def get_hours_worked(self):
@@ -123,6 +129,8 @@ class Task(Base):
             self.complete = bool(value)
         elif column == 'notes':
             self.notes = str(value)
+        else:
+            return False
         return True
 
     def get_dict(self):
@@ -181,14 +189,6 @@ class DB: ### Wrapper class for database functionality ###
                 shift.complete = True
         return len(incomplete)
 
-    def report_jobs(self, return_dict = False): 
-        with self.session() as s:
-            if return_dict:
-                jobs = [i.get_dict() for i in s.query(Job).all()]
-            else:
-                jobs = [i.name for i in s.query(Job).all()]
-        return jobs
-    
     def get_shift(self, shift_id):
         with self.session() as s:
             shift = s.query(Shift).filter(Shift.id == shift_id).first()
@@ -239,16 +239,31 @@ class DB: ### Wrapper class for database functionality ###
                 tasks = [i.get_dict() for i in query.all()]
         return tasks
     
-    def get_job(self, job_id):
+    def report_jobs(self, return_dict = False, return_details = False): 
         with self.session() as s:
-            job = s.query(Job).filter(Job.id == job_id).first()
-            return job.get_dict()
+            if return_dict:
+                jobs = [i.get_dict() for i in s.query(Job).all()]
+                if return_details:
+                    # jobs = [i.update(self.add_job_details(i.id)) for i in jobs]
+                    for job in jobs:
+                        job.update(self.add_job_details(job["id"]))
+            else:
+                jobs = [i.name for i in s.query(Job).all()]
+        return jobs
     
-    def get_job_details(self, job_id):
+    def get_job(self, job_id, return_details = True):
         with self.session() as s:
             job = s.query(Job).filter(Job.id == job_id).first()
             job_dict = job.get_dict()
-            shifts = s.query(Shift).filter_by(job_name = job.name).all()
+            if return_details:
+                job_dict.update(self.add_job_details(job_dict["id"]))
+            return job_dict
+    
+    def add_job_details(self, job_id):
+        with self.session() as s:
+            job_name = s.query(Job).filter_by(id = job_id).first().name
+            shifts = s.query(Shift).filter_by(job_name = job_name).all()
+            job_dict = {}
             job_dict["total_shifts"] = len(shifts)
             job_dict["total_hours"] = round(sum(i.get_hours_worked() for i in shifts), 1)
             return job_dict

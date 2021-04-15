@@ -129,16 +129,18 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.table_view.heading('4', text = 'Title')
     
     def jobs_table(self):
-        self.table_view['columns'] = ('1', '2', '3', '4')
+        self.table_view['columns'] = ('1', '2', '3', '4', '5')
         self.table_view['show'] = 'headings'
         self.table_view.column('1', width = 120, anchor = 'w')
-        self.table_view.column('2', width = 80, anchor = 'w')
-        self.table_view.column('3', width = 100, anchor = 'w')
-        self.table_view.column('4', width = 160, anchor = 'w')
+        self.table_view.column('2', width = 90, anchor = 'w')
+        self.table_view.column('3', width = 90, anchor = 'w')
+        self.table_view.column('4', width = 80, anchor = 'center')
+        self.table_view.column('5', width = 80, anchor = 'center')
         self.table_view.heading('1', text = 'Job')
         self.table_view.heading('2', text = 'Date')
         self.table_view.heading('3', text = 'Created')
         self.table_view.heading('4', text = 'Shifts')
+        self.table_view.heading('5', text = 'Hours')
     
     def build_date_select(self):
         format = '%Y/%m/%d'
@@ -202,12 +204,10 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.table_items = [(i["id"], (i["job_name"], i["time_created"].split()[0], i["time_created"].split()[1], i["title"])) for i in tasks]
 
     def get_jobs(self):
-        jobs = self.db.report_jobs(return_dict = True)
+        jobs = self.db.report_jobs(return_dict = True, return_details = True)
         self.table_items = []
         for job in jobs:
-            total_shifts = len(self.db.report_shifts(job_name = job["name"]))
-            # TODO: add total_hours
-            self.table_items.append((job["id"], (job["name"], job["created"].split()[0], job["created"].split()[1], total_shifts)))
+            self.table_items.append((job["id"], (job["name"], job["created"].split()[0], job["created"].split()[1], job["total_shifts"], job["total_hours"])))
 
     def populate_table(self):
         self.totals_label['text'] = f'Hours: {self.total_hours}\tShifts: {self.total_shifts}'
@@ -244,7 +244,7 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
             item = self.db.get_task(item_id)
         elif item_type == "job":
             # return
-            item = self.db.get_job_details(item_id)
+            item = self.db.get_job(item_id)
         item_view = ViewEditPane(self, item_type, item)
         item_view.root.mainloop()
 
