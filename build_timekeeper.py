@@ -14,7 +14,7 @@ add_binary = []
 
 
 # Compile build info #
-build_info = ['--name={}'.format(package_name), *flags, *['--add-data=' + i for i in add_data], *['--add-binary=' + i for i in add_binary], run_script]
+build_info = [f'--name={package_name}', *flags, *['--add-data=' + i for i in add_data], *['--add-binary=' + i for i in add_binary], run_script]
 
 
 # Run build #

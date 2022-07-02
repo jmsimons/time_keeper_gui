@@ -1,7 +1,7 @@
 from tkinter import ttk, Tk, StringVar, Listbox, MULTIPLE, SINGLE, END, N, S, E, W, DISABLED, TclError
 from tkinter.scrolledtext import ScrolledText
-from timekeeper.ReportEdit import ReportEditApp
-from timekeeper.Popups import PopConfirm
+from timekeeper.report_edit import ReportEditApp
+from timekeeper.popups import PopConfirm
 import time
 
 
@@ -169,7 +169,7 @@ class ShiftApp(): ### In-progress Shift application ###
         self.task_index = []
         self.task_list.insert(END, "Shift Notes")
         self.task_index.append(None)
-        for _, task in self.tasks.items():
+        for task in [i for i in self.tasks.values()][::-1]:
             self.task_list.insert(END, task['title'])
             self.task_index.append(task["id"])
     

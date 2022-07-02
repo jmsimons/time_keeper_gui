@@ -1,8 +1,8 @@
 
 import os
-from timekeeper.Main import MainApp, ShiftApp
-from timekeeper.ReportEdit import ReportEditApp
-from timekeeper.Database import DB
+from timekeeper.main import Tk, MainApp, ShiftApp
+from timekeeper.report_edit import ReportEditApp
+from timekeeper.database import DB
 
 db_filename = 'time.db'
 db = DB(db_filename)

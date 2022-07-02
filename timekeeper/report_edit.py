@@ -3,8 +3,8 @@ from tkinter import ttk, Tk, StringVar, END, N, S, E, W, NORMAL, DISABLED
 from tkinter.scrolledtext import ScrolledText
 import time, clipboard
 from timekeeper.grid_table import GridTable
-from timekeeper.Export import Export
-from timekeeper.Popups import PopConfirm, EntryBox
+from timekeeper.export import Export
+from timekeeper.popups import PopConfirm, EntryBox
 
 
 class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application window gui elements, data, and methods ###
