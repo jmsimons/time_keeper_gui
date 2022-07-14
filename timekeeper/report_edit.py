@@ -58,12 +58,13 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         self.search_input.bind('<KeyRelease>', self.filter_data)
         self.search_input.bind("<Return>", self.filter_data)
         self.export_menu.bind("<ButtonRelease-1>", self.export)
+
     
     def grid_configure(self):
         # TODO: this isn't working, trying to figure out why. The goal is to set fixed column-widths so that the ui doesn't redraw when a widget changes size.
         self.root.columnconfigure(0, weight = 0)
         self.container.columnconfigure(0, weight = 0)
-        self.frame.columnconfigure(0, weight = 0)
+        # self.frame.columnconfigure(0, weight = 0)
         self.frame.columnconfigure(1, weight = 1)
         self.frame.columnconfigure(2, weight = 2)
         self.frame.columnconfigure(3, weight = 2)
@@ -243,7 +244,6 @@ class ReportEditApp(): ### 'Report hours' and 'edit jobs/shifts' application win
         elif item_type == "task":
             item = self.db.get_task(item_id)
         elif item_type == "job":
-            # return
             item = self.db.get_job(item_id)
         item_view = ViewEditPane(self, item_type, item)
         item_view.root.mainloop()
