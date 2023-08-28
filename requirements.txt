@@ -5,6 +5,6 @@ Pillow==9.2.0
 pyobjc-core==8.5
 pyobjc-framework-Cocoa==8.5
 pyperclip==1.8.2
-reportlab==3.6.11
+reportlab==3.6.13
 rumps==0.3.0
 SQLAlchemy==1.4.39
